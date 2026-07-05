@@ -1,11 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "AaH+vNyxa8s=",
+  "dgSpecHash": "ZuIXl4UNOh0=",
   "success": true,
   "projectFilePath": "/home/ayanami/HKSScript/HKSScript.csproj",
-  "expectedPackageFiles": [
-    "/home/ayanami/.nuget/packages/keralua/1.4.9/keralua.1.4.9.nupkg.sha512",
-    "/home/ayanami/.nuget/packages/nlua/1.7.9/nlua.1.7.9.nupkg.sha512"
-  ],
+  "expectedPackageFiles": [],
   "logs": []
 }
