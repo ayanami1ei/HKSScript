@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "ZuIXl4UNOh0=",
+  "dgSpecHash": "MipFthSpOOY=",
   "success": true,
   "projectFilePath": "/home/ayanami/HKSScript/HKSScript.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/home/ayanami/.nuget/packages/opencvsharp4/4.13.0.20260627/opencvsharp4.4.13.0.20260627.nupkg.sha512"
+  ],
   "logs": []
 }
