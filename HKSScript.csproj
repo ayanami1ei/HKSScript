@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="OpenCvSharp4" Version="4.13.0.20260627" />
+    <PackageReference Include="OpenCvSharp4.runtime.ubuntu.22.04-x64" Version="4.6.0-SNAPSHOT" />
   </ItemGroup>
 
 </Project>

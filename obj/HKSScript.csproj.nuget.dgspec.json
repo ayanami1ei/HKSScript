@@ -48,6 +48,10 @@
             "OpenCvSharp4": {
               "target": "Package",
               "version": "[4.13.0.20260627, )"
+            },
+            "OpenCvSharp4.runtime.ubuntu.22.04-x64": {
+              "target": "Package",
+              "version": "[4.6.0-SNAPSHOT, )"
             }
           },
           "imports": [

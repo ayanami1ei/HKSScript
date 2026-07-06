@@ -1,0 +1,58 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "HKSScript/1.0.0": {
+        "dependencies": {
+          "OpenCvSharp4": "4.13.0.20260627",
+          "OpenCvSharp4.runtime.ubuntu.22.04-x64": "4.6.0-SNAPSHOT"
+        },
+        "runtime": {
+          "HKSScript.dll": {}
+        }
+      },
+      "OpenCvSharp4/4.13.0.20260627": {
+        "runtime": {
+          "lib/net8.0/OpenCvSharp.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.0.0"
+          }
+        }
+      },
+      "OpenCvSharp4.runtime.ubuntu.22.04-x64/4.6.0-SNAPSHOT": {
+        "runtimeTargets": {
+          "runtimes/ubuntu.22.04-x64/native/libOpenCvSharpExtern.so": {
+            "rid": "ubuntu.22.04-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "HKSScript/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "OpenCvSharp4/4.13.0.20260627": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-nYk95jkyYY9f0sF5KqZ3OB1SWkmqsfV7eN0ROiQds/rxpSn0v1G0QIedMbwuqbdPhvQnOIG2DDmpkLnHEJMh8Q==",
+      "path": "opencvsharp4/4.13.0.20260627",
+      "hashPath": "opencvsharp4.4.13.0.20260627.nupkg.sha512"
+    },
+    "OpenCvSharp4.runtime.ubuntu.22.04-x64/4.6.0-SNAPSHOT": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Zh24714WI0pMDMRMt7XfVaYx2fe1J8v6JGjePxAcO5+WhVnu07mljaQgohFT2ZEnboj1Ss8ZejMGSpbmxMks9Q==",
+      "path": "opencvsharp4.runtime.ubuntu.22.04-x64/4.6.0-snapshot",
+      "hashPath": "opencvsharp4.runtime.ubuntu.22.04-x64.4.6.0-snapshot.nupkg.sha512"
+    }
+  }
+}

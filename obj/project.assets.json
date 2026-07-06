@@ -14,6 +14,15 @@
             "related": ".xml"
           }
         }
+      },
+      "OpenCvSharp4.runtime.ubuntu.22.04-x64/4.6.0-SNAPSHOT": {
+        "type": "package",
+        "runtimeTargets": {
+          "runtimes/ubuntu.22.04-x64/native/libOpenCvSharpExtern.so": {
+            "assetType": "native",
+            "rid": "ubuntu.22.04-x64"
+          }
+        }
       }
     }
   },
@@ -37,11 +46,24 @@
         "opencvsharp4.4.13.0.20260627.nupkg.sha512",
         "opencvsharp4.nuspec"
       ]
+    },
+    "OpenCvSharp4.runtime.ubuntu.22.04-x64/4.6.0-SNAPSHOT": {
+      "sha512": "Zh24714WI0pMDMRMt7XfVaYx2fe1J8v6JGjePxAcO5+WhVnu07mljaQgohFT2ZEnboj1Ss8ZejMGSpbmxMks9Q==",
+      "type": "package",
+      "path": "opencvsharp4.runtime.ubuntu.22.04-x64/4.6.0-snapshot",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "opencvsharp4.runtime.ubuntu.22.04-x64.4.6.0-snapshot.nupkg.sha512",
+        "opencvsharp4.runtime.ubuntu.22.04-x64.nuspec",
+        "runtimes/ubuntu.22.04-x64/native/libOpenCvSharpExtern.so"
+      ]
     }
   },
   "projectFileDependencyGroups": {
     "net10.0": [
-      "OpenCvSharp4 >= 4.13.0.20260627"
+      "OpenCvSharp4 >= 4.13.0.20260627",
+      "OpenCvSharp4.runtime.ubuntu.22.04-x64 >= 4.6.0-SNAPSHOT"
     ]
   },
   "packageFolders": {
@@ -91,6 +113,10 @@
           "OpenCvSharp4": {
             "target": "Package",
             "version": "[4.13.0.20260627, )"
+          },
+          "OpenCvSharp4.runtime.ubuntu.22.04-x64": {
+            "target": "Package",
+            "version": "[4.6.0-SNAPSHOT, )"
           }
         },
         "imports": [
