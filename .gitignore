@@ -1,2 +1,5 @@
-./bin/**
-./obj/**
+bin/
+obj/
+Grammar/*.interp
+Grammar/*.tokens
+Tools/*.jar

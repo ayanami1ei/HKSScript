@@ -2,68 +2,41 @@
   "version": 3,
   "targets": {
     "net10.0": {
-      "OpenCvSharp4/4.13.0.20260627": {
+      "Antlr4.Runtime.Standard/4.13.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/OpenCvSharp.dll": {
+          "lib/netstandard2.0/Antlr4.Runtime.Standard.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net8.0/OpenCvSharp.dll": {
+          "lib/netstandard2.0/Antlr4.Runtime.Standard.dll": {
             "related": ".xml"
-          }
-        }
-      },
-      "OpenCvSharp4.runtime.ubuntu.22.04-x64/4.6.0-SNAPSHOT": {
-        "type": "package",
-        "runtimeTargets": {
-          "runtimes/ubuntu.22.04-x64/native/libOpenCvSharpExtern.so": {
-            "assetType": "native",
-            "rid": "ubuntu.22.04-x64"
           }
         }
       }
     }
   },
   "libraries": {
-    "OpenCvSharp4/4.13.0.20260627": {
-      "sha512": "nYk95jkyYY9f0sF5KqZ3OB1SWkmqsfV7eN0ROiQds/rxpSn0v1G0QIedMbwuqbdPhvQnOIG2DDmpkLnHEJMh8Q==",
+    "Antlr4.Runtime.Standard/4.13.1": {
+      "sha512": "Da5+i4kFHUseJRZGcBG5fmZGpA/Ns180ibrQMxgZzjpQOnENVvSL5gi5HZ8Ncz8/AR2WsKbOg2lMBzjz0HUQcA==",
       "type": "package",
-      "path": "opencvsharp4/4.13.0.20260627",
+      "path": "antlr4.runtime.standard/4.13.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "README.managed.md",
-        "analyzers/dotnet/cs/OpenCvSharp.Analyzers.dll",
-        "lib/net8.0/OpenCvSharp.dll",
-        "lib/net8.0/OpenCvSharp.xml",
-        "lib/netstandard2.0/OpenCvSharp.dll",
-        "lib/netstandard2.0/OpenCvSharp.xml",
-        "lib/netstandard2.1/OpenCvSharp.dll",
-        "lib/netstandard2.1/OpenCvSharp.xml",
-        "opencvsharp.png",
-        "opencvsharp4.4.13.0.20260627.nupkg.sha512",
-        "opencvsharp4.nuspec"
-      ]
-    },
-    "OpenCvSharp4.runtime.ubuntu.22.04-x64/4.6.0-SNAPSHOT": {
-      "sha512": "Zh24714WI0pMDMRMt7XfVaYx2fe1J8v6JGjePxAcO5+WhVnu07mljaQgohFT2ZEnboj1Ss8ZejMGSpbmxMks9Q==",
-      "type": "package",
-      "path": "opencvsharp4.runtime.ubuntu.22.04-x64/4.6.0-snapshot",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "opencvsharp4.runtime.ubuntu.22.04-x64.4.6.0-snapshot.nupkg.sha512",
-        "opencvsharp4.runtime.ubuntu.22.04-x64.nuspec",
-        "runtimes/ubuntu.22.04-x64/native/libOpenCvSharpExtern.so"
+        "antlr4.runtime.standard.4.13.1.nupkg.sha512",
+        "antlr4.runtime.standard.nuspec",
+        "lib/net45/Antlr4.Runtime.Standard.dll",
+        "lib/net45/Antlr4.Runtime.Standard.xml",
+        "lib/netstandard2.0/Antlr4.Runtime.Standard.dll",
+        "lib/netstandard2.0/Antlr4.Runtime.Standard.xml"
       ]
     }
   },
   "projectFileDependencyGroups": {
     "net10.0": [
-      "OpenCvSharp4 >= 4.13.0.20260627",
-      "OpenCvSharp4.runtime.ubuntu.22.04-x64 >= 4.6.0-SNAPSHOT"
+      "Antlr4.Runtime.Standard >= 4.13.1"
     ]
   },
   "packageFolders": {
@@ -110,13 +83,9 @@
       "net10.0": {
         "targetAlias": "net10.0",
         "dependencies": {
-          "OpenCvSharp4": {
+          "Antlr4.Runtime.Standard": {
             "target": "Package",
-            "version": "[4.13.0.20260627, )"
-          },
-          "OpenCvSharp4.runtime.ubuntu.22.04-x64": {
-            "target": "Package",
-            "version": "[4.6.0-SNAPSHOT, )"
+            "version": "[4.13.1, )"
           }
         },
         "imports": [

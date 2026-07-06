@@ -1,11 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "aeZRVJDzej0=",
+  "dgSpecHash": "PWoCWz2JSyo=",
   "success": true,
   "projectFilePath": "/home/ayanami/HKSScript/HKSScript.csproj",
   "expectedPackageFiles": [
-    "/home/ayanami/.nuget/packages/opencvsharp4/4.13.0.20260627/opencvsharp4.4.13.0.20260627.nupkg.sha512",
-    "/home/ayanami/.nuget/packages/opencvsharp4.runtime.ubuntu.22.04-x64/4.6.0-snapshot/opencvsharp4.runtime.ubuntu.22.04-x64.4.6.0-snapshot.nupkg.sha512"
+    "/home/ayanami/.nuget/packages/antlr4.runtime.standard/4.13.1/antlr4.runtime.standard.4.13.1.nupkg.sha512"
   ],
   "logs": []
 }

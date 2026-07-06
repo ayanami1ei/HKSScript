@@ -1,5 +1,3 @@
-using OpenCvSharp.Aruco;
-
 public class FeatureRegistry
 {
     private Dictionary<string, Feature> features = [];
