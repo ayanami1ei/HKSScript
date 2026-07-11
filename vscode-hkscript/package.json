@@ -1,0 +1,52 @@
+{
+  "name": "hksscript",
+  "displayName": "HksScript",
+  "description": "HksScript language support: syntax highlighting and basic syntax checking",
+  "version": "0.1.0",
+  "publisher": "hksscript",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:hksscript"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "hksscript",
+        "aliases": [
+          "HksScript",
+          "hksscript"
+        ],
+        "extensions": [
+          ".hks"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "hksscript",
+        "scopeName": "source.hksscript",
+        "path": "./syntaxes/hksscript.tmLanguage.json"
+      }
+    ]
+  },
+  "dependencies": {
+    "antlr4": "4.13.1"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  }
+}

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HKSScript")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8eb43167053f2189d602a56831387bdead48cae2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c16cf22ba003d83538597b2230017abb42f69792")]
 [assembly: System.Reflection.AssemblyProductAttribute("HKSScript")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HKSScript")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

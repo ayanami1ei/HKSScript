@@ -1,0 +1,74 @@
+{
+  "scopeName": "source.hksscript",
+  "fileTypes": [".hks"],
+  "name": "HksScript",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.hksscript",
+          "begin": "//",
+          "end": "$"
+        },
+        {
+          "name": "comment.block.hksscript",
+          "begin": "\\(\\*",
+          "end": "\\*\\)"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.hksscript",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [{ "name": "constant.character.escape.hksscript", "match": "\\\\." }]
+    },
+    "numbers": {
+      "patterns": [
+        { "name": "constant.numeric.float.hksscript", "match": "\\b[0-9]+\\.[0-9]+\\b" },
+        { "name": "constant.numeric.integer.hksscript", "match": "\\b[0-9]+\\b" }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        { "name": "keyword.control.hksscript", "match": "\\blet\\b" },
+        { "name": "keyword.control.hksscript", "match": "\\bload\\b" },
+        { "name": "keyword.operator.logical.hksscript", "match": "\\bor\\b" },
+        { "name": "keyword.operator.logical.hksscript", "match": "\\band\\b" },
+        { "name": "keyword.operator.logical.hksscript", "match": "\\bnot\\b" },
+        { "name": "keyword.other.hksscript", "match": "\\bquery\\b" },
+        { "name": "constant.language.hksscript", "match": "\\btrue\\b" },
+        { "name": "constant.language.hksscript", "match": "\\bfalse\\b" }
+      ]
+    },
+    "types": {
+      "patterns": [
+        { "name": "storage.type.hksscript", "match": "\\bint\\b" },
+        { "name": "storage.type.hksscript", "match": "\\bfloat\\b" },
+        { "name": "storage.type.hksscript", "match": "\\bstring\\b" },
+        { "name": "storage.type.hksscript", "match": "\\bbool\\b" },
+        { "name": "storage.type.hksscript", "match": "\\bMat\\b" }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        { "name": "keyword.operator.pipe.hksscript", "match": "\\|>" },
+        { "name": "keyword.operator.comparison.hksscript", "match": "==|<>|<=|>=|<|>" },
+        { "name": "keyword.operator.arithmetic.hksscript", "match": "\\+|\\-|\\*|/" },
+        { "name": "keyword.operator.assignment.hksscript", "match": "=" },
+        { "name": "keyword.operator.other.hksscript", "match": ":" },
+        { "name": "punctuation.terminator.hksscript", "match": ";" },
+        { "name": "punctuation.separator.hksscript", "match": "," },
+        { "name": "punctuation.accessor.hksscript", "match": "\\." }
+      ]
+    }
+  }
+}
