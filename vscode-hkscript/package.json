@@ -26,7 +26,8 @@
         "extensions": [
           ".hks"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "semanticHighlighting": true
       }
     ],
     "grammars": [
@@ -35,12 +36,36 @@
         "scopeName": "source.hksscript",
         "path": "./syntaxes/hksscript.tmLanguage.json"
       }
+    ],
+    "configuration": {
+      "title": "HksScript",
+      "properties": {
+        "hksscript.compilerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the HksScript CLI DLL (HKSScript.dll). Leave empty for auto-detect."
+        }
+      }
+    },
+    "semanticTokenScopes": [
+      {
+        "language": "hksscript",
+        "scopes": {
+          "function": [
+            "entity.name.function"
+          ],
+          "type": [
+            "support.type"
+          ]
+        }
+      }
     ]
   },
   "dependencies": {
     "antlr4": "4.13.1"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
     "@types/vscode": "^1.80.0",
     "typescript": "^5.0.0"
   },

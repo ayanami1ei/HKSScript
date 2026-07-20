@@ -51,11 +51,11 @@
     },
     "types": {
       "patterns": [
-        { "name": "storage.type.hksscript", "match": "\\bint\\b" },
-        { "name": "storage.type.hksscript", "match": "\\bfloat\\b" },
-        { "name": "storage.type.hksscript", "match": "\\bstring\\b" },
-        { "name": "storage.type.hksscript", "match": "\\bbool\\b" },
-        { "name": "storage.type.hksscript", "match": "\\bMat\\b" }
+        { "name": "support.type.hksscript", "match": "\\bint\\b" },
+        { "name": "support.type.hksscript", "match": "\\bfloat\\b" },
+        { "name": "support.type.hksscript", "match": "\\bstring\\b" },
+        { "name": "support.type.hksscript", "match": "\\bbool\\b" },
+        { "name": "support.type.hksscript", "match": "\\bMat\\b" }
       ]
     },
     "operators": {

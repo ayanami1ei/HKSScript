@@ -1,6 +1,4 @@
-.vscodeignore
 tsconfig.json
 src/**
-node_modules/**
 **/*.map
 .gitignore
