@@ -3,3 +3,4 @@ obj/
 Grammar/*.interp
 Grammar/*.tokens
 Tools/*.jar
+.vscode/

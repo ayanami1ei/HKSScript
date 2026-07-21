@@ -1,20 +1,35 @@
-(* HksScript Demo: OCaml-style image processing script *)
+# HksScript Demo
 
-(* 1. Load an image *)
-let img : Mat = load "test.png";
+import find_circle, locator
 
-(* 2. Detect circles *)
-let circles = Find.findCircle(img);
+# 用户自定义函数，显式返回值类型
+def process_batch(path) -> List<Circle>:
+    imgs = load(path)
+    return find_circles(imgs)
 
-(* 3. Create features *)
-let area = Area.new();
+# 单图处理
+img = load("test.png")
+circles = find_circles(img)
 
-(* 4. Simple query *)
-let r1 = circles.query(area < 0);
+# query 语法糖写法
+r1 = query from circles with area < 0
 
-(* 5. Compound conditions using or / and / not with parentheses *)
-let r2 = circles.query(area < 0 or area > 10);
-let r3 = circles.query(area < 5 and area > 0);
-let r4 = circles.query(not (area < 0) and area > 10);
+# query 函数调用写法（等价）
+r2 = query(circles, area < 0 or area > 10)
 
-print("done");
+# 管道链式处理
+# 上一步结果自动填入下一步的第一个类型兼容参数
+load("batch/*.png") => find_circles() => query(area > 10) => save("output/")
+
+# 等价于不带 pipe 的写法：
+# imgs = load("batch/*.png")
+# all_circles = find_circles(imgs)
+# filtered = query(all_circles, area > 10)
+# save(filtered, "output/")
+
+# 集合操作（运算符语法糖）
+big = query from all_circles with area > 50
+small = query from all_circles with area < 10
+mid = all_circles - (big | small)
+
+print("done")
