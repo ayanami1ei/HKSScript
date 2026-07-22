@@ -1,3 +1,5 @@
+namespace HksScript.Hir;
+
 public abstract record class HirBasicNode
 {
     protected HirType type;

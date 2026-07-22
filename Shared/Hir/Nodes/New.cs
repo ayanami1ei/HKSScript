@@ -1,3 +1,5 @@
+namespace HksScript.Hir;
+
 public record class New : HirBasicNode
 {
     private int varId;

@@ -1,3 +1,5 @@
+namespace HksScript.Hir;
+
 public record class Import : HirBasicNode
 {
     private String[]? imported =null;

@@ -1,3 +1,5 @@
+namespace HksScript.Hir;
+
 public record class Call : HirBasicNode
 {
     private int blockId;

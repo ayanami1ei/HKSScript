@@ -1,3 +1,5 @@
+namespace HksScript.Hir;
+
 public record class Assign : HirBasicNode
 {
     private int rhsId;
