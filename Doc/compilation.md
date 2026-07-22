@@ -653,12 +653,7 @@ load("batch/*.png")     → Many<Mat>
   => query(area > 10)   → 并行筛选
 ```
 
-```csharp
-// HIR 中的并行标记
-record ParallelForEach(Id Dest, Id Source, Block Body) : HIRInst();
-```
-
-编译器根据算子特性判断是否生成 `ParallelForEach`。
+并行策略由执行器/代码生成器自行决定，不作为 HIR 语义的一部分（后续可加注解机制）。
 
 ---
 
