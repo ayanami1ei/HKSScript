@@ -4,6 +4,14 @@ exports.activate = activate;
 const vscode = require("vscode");
 function activate(context) {
     console.log('HKS: activate');
+    // 全局错误捕获
+    process.on('uncaughtException', (err) => {
+        console.log('HKS: UNCAUGHT: ' + err.message);
+        console.log('HKS: stack: ' + err.stack);
+    });
+    process.on('unhandledRejection', (reason) => {
+        console.log('HKS: UNHANDLED REJECTION: ' + String(reason));
+    });
     const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
     item.text = 'HKS ✓';
     item.show();
@@ -61,6 +69,13 @@ function activate(context) {
         if (vscode.window.activeTextEditor?.document === e.document)
             update(vscode.window.activeTextEditor);
     }));
-    setTimeout(() => update(vscode.window.activeTextEditor), 500);
+    setTimeout(() => {
+        try {
+            update(vscode.window.activeTextEditor);
+        }
+        catch (e) {
+            console.log('HKS: TIMEOUT ERROR: ' + String(e));
+        }
+    }, 500);
 }
 //# sourceMappingURL=extension.js.map
