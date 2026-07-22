@@ -1,0 +1,24 @@
+{
+  "name": "hkscript",
+  "displayName": "HKS Script",
+  "description": "HKS 脚本语言支持",
+  "version": "0.1.0",
+  "publisher": "hkscript",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [{
+      "id": "hkscript",
+      "aliases": ["HKS Script", "hkscript"],
+      "extensions": [".hks"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "hkscript",
+      "scopeName": "source.hkscript",
+      "path": "./syntaxes/hkscript.tmLanguage.json"
+    }]
+  }
+}
