@@ -17,8 +17,10 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(kwDec, tpDec, fnDec, coDec, stDec, nuDec);
 
     function update(editor: vscode.TextEditor | undefined) {
-        if (!editor || editor.document.languageId !== 'hkscript') return;
-        console.log('HKS: updating');
+        console.log('HKS: update called, editor=' + (editor ? 'yes' : 'no'));
+        if (!editor) return;
+        console.log('HKS: lang=' + editor.document.languageId);
+        if (editor.document.languageId !== 'hkscript') return;
 
         const text = editor.document.getText();
         const posAt = (offset: number) => editor.document.positionAt(offset);

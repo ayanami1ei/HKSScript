@@ -16,9 +16,12 @@ function activate(context) {
     const nuDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(250,179,135,0.3)' });
     context.subscriptions.push(kwDec, tpDec, fnDec, coDec, stDec, nuDec);
     function update(editor) {
-        if (!editor || editor.document.languageId !== 'hkscript')
+        console.log('HKS: update called, editor=' + (editor ? 'yes' : 'no'));
+        if (!editor)
             return;
-        console.log('HKS: updating');
+        console.log('HKS: lang=' + editor.document.languageId);
+        if (editor.document.languageId !== 'hkscript')
+            return;
         const text = editor.document.getText();
         const posAt = (offset) => editor.document.positionAt(offset);
         const kw = [];
