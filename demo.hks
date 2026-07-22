@@ -1,6 +1,10 @@
 # HksScript Demo
 
-imread("./test.png")
+m=load("./image.png")
+n=gray(m)
+save("./")
+
+load("./image.png")
     =>gray()
-    =>imwrite("./grap.png")
+    =>save("./gray.png")
 print("done")

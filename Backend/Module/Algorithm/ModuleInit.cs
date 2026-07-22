@@ -38,7 +38,7 @@ public static class ModuleInit
             args => BasicAlgo.ImRead((string)args[0]!)));
 
         table.Register("save", new ExternalFunction("imwrite",
-            args => { BasicAlgo.ImWrite((string)args[0]!, (Mat)args[1]!); return null; }));
+            args => { BasicAlgo.ImWrite((string)args[1]!, (Mat)args[0]!); return null; }));
 
         table.Register("__init_basic", new ExternalFunction("__init_basic",
             _ => { RegisterAll(table); return null; }));
