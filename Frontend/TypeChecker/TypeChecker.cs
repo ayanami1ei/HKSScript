@@ -27,6 +27,19 @@ public class TypeChecker
         return result;
     }
 
+    public string? ResolveType(string name)
+        => symbols.Resolve(name)?.Name;
+
+    public string? ResolveFuncType(string name)
+    {
+        if (functions.TryGetValue(name, out var sigs) && sigs.Count > 0)
+        {
+            var s = sigs[0];
+            return $"({string.Join(",", s.ParamTypes)})->{s.ReturnType}";
+        }
+        return null;
+    }
+
     private void RegisterBuiltins()
     {
         RegisterFunc("load",       new[] { "string" },             "Mat");

@@ -7,3 +7,4 @@ Tools/*.jar
 Frontend/Grammar/*.interp
 Frontend/Grammar/*.tokens
 .DS_Store
+**/**.hks

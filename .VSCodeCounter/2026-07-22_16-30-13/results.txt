@@ -1,0 +1,120 @@
+Date : 2026-07-22 16:30:13
+Directory : /home/ayanami/HKSScript
+Total : 57 files,  10347 codes, 1522 comments, 1256 blanks, all 13125 lines
+
+Languages
++--------------------+------------+------------+------------+------------+------------+
+| language           | files      | code       | comment    | blank      | total      |
++--------------------+------------+------------+------------+------------+------------+
+| C#                 |         31 |      4,505 |      1,498 |        452 |      6,455 |
+| JavaScript         |          6 |      3,201 |         14 |        269 |      3,484 |
+| Markdown           |          6 |      1,033 |          0 |        344 |      1,377 |
+| HTML               |          1 |        969 |          0 |        119 |      1,088 |
+| TypeScript         |          2 |        285 |          2 |         36 |        323 |
+| JSON               |          4 |        238 |          0 |          4 |        242 |
+| Shell Script       |          3 |         59 |          8 |         20 |         87 |
+| PlantUML           |          1 |         18 |          0 |          6 |         24 |
+| JSON with Comments |          1 |         18 |          0 |          1 |         19 |
+| XML                |          1 |         17 |          0 |          4 |         21 |
+| Ignore             |          1 |          4 |          0 |          1 |          5 |
++--------------------+------------+------------+------------+------------+------------+
+
+Directories
++--------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                 | files      | code       | comment    | blank      | total      |
++--------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                    |         57 |     10,347 |      1,522 |      1,256 |     13,125 |
+| . (Files)                                                                            |          4 |         67 |          1 |         18 |         86 |
+| Backend                                                                              |          7 |        516 |         43 |        102 |        661 |
+| Backend/Interpreter                                                                  |          3 |        321 |         31 |         56 |        408 |
+| Backend/Module                                                                       |          4 |        195 |         12 |         46 |        253 |
+| Backend/Module (Files)                                                               |          1 |         21 |          0 |          9 |         30 |
+| Backend/Module/Algorithm                                                             |          3 |        174 |         12 |         37 |        223 |
+| Cli                                                                                  |          3 |        185 |         11 |         35 |        231 |
+| Doc                                                                                  |          4 |      1,852 |          0 |        405 |      2,257 |
+| Frontend                                                                             |         29 |      7,554 |      1,459 |        655 |      9,668 |
+| Frontend (Files)                                                                     |          1 |         14 |          1 |          5 |         20 |
+| Frontend/Ast                                                                         |          2 |        220 |          8 |         63 |        291 |
+| Frontend/Grammar                                                                     |          7 |      2,950 |      1,424 |        161 |      4,535 |
+| Frontend/Lexer                                                                       |          1 |        135 |          8 |         25 |        168 |
+| Frontend/Lowering                                                                    |          1 |        184 |          0 |         32 |        216 |
+| Frontend/TypeChecker                                                                 |          2 |        291 |          2 |         49 |        342 |
+| Frontend/vscode-hksscript                                                            |         15 |      3,760 |         16 |        320 |      4,096 |
+| Frontend/vscode-hksscript (Files)                                                    |          6 |        200 |          0 |         14 |        214 |
+| Frontend/vscode-hksscript/out                                                        |          4 |      1,802 |         10 |          0 |      1,812 |
+| Frontend/vscode-hksscript/out (Files)                                                |          2 |        318 |          4 |          0 |        322 |
+| Frontend/vscode-hksscript/out/parser                                                 |          2 |      1,484 |          6 |          0 |      1,490 |
+| Frontend/vscode-hksscript/src                                                        |          4 |      1,684 |          6 |        305 |      1,995 |
+| Frontend/vscode-hksscript/src (Files)                                                |          2 |        285 |          2 |         36 |        323 |
+| Frontend/vscode-hksscript/src/parser                                                 |          2 |      1,399 |          4 |        269 |      1,672 |
+| Frontend/vscode-hksscript/syntaxes                                                   |          1 |         74 |          0 |          1 |         75 |
+| Shared                                                                               |          9 |        136 |          2 |         29 |        167 |
+| Shared/Hir                                                                           |          9 |        136 |          2 |         29 |        167 |
+| Shared/Hir (Files)                                                                   |          2 |         14 |          2 |          5 |         21 |
+| Shared/Hir/Nodes                                                                     |          7 |        122 |          0 |         24 |        146 |
+| Tests                                                                                |          1 |         37 |          6 |         12 |         55 |
++--------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++--------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| filename                                                                             | language           | code       | comment    | blank      | total      |
++--------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| /home/ayanami/HKSScript/Backend/Interpreter/FunctionTable.cs                         | C#                 |         41 |          4 |         15 |         60 |
+| /home/ayanami/HKSScript/Backend/Interpreter/Interpreter.cs                           | C#                 |         84 |          8 |         20 |        112 |
+| /home/ayanami/HKSScript/Backend/Interpreter/Test.cs                                  | C#                 |        196 |         19 |         21 |        236 |
+| /home/ayanami/HKSScript/Backend/Module/Algorithm/BasicAlgo.cs                        | C#                 |         72 |         11 |         13 |         96 |
+| /home/ayanami/HKSScript/Backend/Module/Algorithm/BasicAlgoTests.cs                   | C#                 |         69 |          1 |         10 |         80 |
+| /home/ayanami/HKSScript/Backend/Module/Algorithm/ModuleInit.cs                       | C#                 |         33 |          0 |         14 |         47 |
+| /home/ayanami/HKSScript/Backend/Module/Pack.cs                                       | C#                 |         21 |          0 |          9 |         30 |
+| /home/ayanami/HKSScript/Cli/BuiltinRegistry.cs                                       | C#                 |         57 |          8 |         10 |         75 |
+| /home/ayanami/HKSScript/Cli/Cli.cs                                                   | C#                 |        126 |          3 |         23 |        152 |
+| /home/ayanami/HKSScript/Cli/Program.cs                                               | C#                 |          2 |          0 |          2 |          4 |
+| /home/ayanami/HKSScript/Code.md                                                      | Markdown           |         37 |          0 |          7 |         44 |
+| /home/ayanami/HKSScript/Doc/README.md                                                | Markdown           |         21 |          0 |          6 |         27 |
+| /home/ayanami/HKSScript/Doc/architecture.puml                                        | PlantUML           |         18 |          0 |          6 |         24 |
+| /home/ayanami/HKSScript/Doc/compilation.html                                         | HTML               |        969 |          0 |        119 |      1,088 |
+| /home/ayanami/HKSScript/Doc/compilation.md                                           | Markdown           |        844 |          0 |        274 |      1,118 |
+| /home/ayanami/HKSScript/Frontend/Ast/AstBuilder.cs                                   | C#                 |        192 |          6 |         39 |        237 |
+| /home/ayanami/HKSScript/Frontend/Ast/AstNodes.cs                                     | C#                 |         28 |          2 |         24 |         54 |
+| /home/ayanami/HKSScript/Frontend/Grammar/HksScriptBaseListener.cs                    | C#                 |         94 |        439 |          7 |        540 |
+| /home/ayanami/HKSScript/Frontend/Grammar/HksScriptBaseVisitor.cs                     | C#                 |         51 |        378 |          5 |        434 |
+| /home/ayanami/HKSScript/Frontend/Grammar/HksScriptLexer.cs                           | C#                 |        174 |         14 |         21 |        209 |
+| /home/ayanami/HKSScript/Frontend/Grammar/HksScriptListener.cs                        | C#                 |         87 |        354 |          5 |        446 |
+| /home/ayanami/HKSScript/Frontend/Grammar/HksScriptParser.cs                          | C#                 |      2,383 |         14 |         74 |      2,471 |
+| /home/ayanami/HKSScript/Frontend/Grammar/HksScriptVisitor.cs                         | C#                 |         49 |        225 |          5 |        279 |
+| /home/ayanami/HKSScript/Frontend/Grammar/README.md                                   | Markdown           |        112 |          0 |         44 |        156 |
+| /home/ayanami/HKSScript/Frontend/Lexer/TokenStreamFilter.cs                          | C#                 |        135 |          8 |         25 |        168 |
+| /home/ayanami/HKSScript/Frontend/Lowering/LoweringPass.cs                            | C#                 |        184 |          0 |         32 |        216 |
+| /home/ayanami/HKSScript/Frontend/TypeChecker/SymbolTable.cs                          | C#                 |         40 |          0 |          9 |         49 |
+| /home/ayanami/HKSScript/Frontend/TypeChecker/TypeChecker.cs                          | C#                 |        251 |          2 |         40 |        293 |
+| /home/ayanami/HKSScript/Frontend/regenerate-grammar.sh                               | Shell Script       |         14 |          1 |          5 |         20 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/.vscodeignore                      | Ignore             |          4 |          0 |          1 |          5 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/README.md                          | Markdown           |         14 |          0 |          9 |         23 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/language-configuration.json        | JSON               |         17 |          0 |          1 |         18 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/out/api-types.js                   | JavaScript         |         83 |          1 |          0 |         84 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/out/extension.js                   | JavaScript         |        235 |          3 |          0 |        238 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/out/parser/HksScriptLexer.js       | JavaScript         |        152 |          3 |          0 |        155 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/out/parser/HksScriptParser.js      | JavaScript         |      1,332 |          3 |          0 |      1,335 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/package-lock.json                  | JSON               |         70 |          0 |          1 |         71 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/package.json                       | JSON               |         77 |          0 |          1 |         78 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/src/api-types.ts                   | TypeScript         |         94 |          0 |          7 |        101 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/src/extension.ts                   | TypeScript         |        191 |          2 |         29 |        222 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/src/parser/HksScriptLexer.js       | JavaScript         |        151 |          2 |         13 |        166 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/src/parser/HksScriptParser.js      | JavaScript         |      1,248 |          2 |        256 |      1,506 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/syntaxes/hksscript.tmLanguage.json | JSON               |         74 |          0 |          1 |         75 |
+| /home/ayanami/HKSScript/Frontend/vscode-hksscript/tsconfig.json                      | JSON with Comments |         18 |          0 |          1 |         19 |
+| /home/ayanami/HKSScript/HKSScript.csproj                                             | XML                |         17 |          0 |          4 |         21 |
+| /home/ayanami/HKSScript/README.md                                                    | Markdown           |          5 |          0 |          4 |          9 |
+| /home/ayanami/HKSScript/Shared/Hir/HirRunner.cs                                      | C#                 |          5 |          0 |          2 |          7 |
+| /home/ayanami/HKSScript/Shared/Hir/HirType.cs                                        | C#                 |          9 |          2 |          3 |         14 |
+| /home/ayanami/HKSScript/Shared/Hir/Nodes/Assign.cs                                   | C#                 |         21 |          0 |          3 |         24 |
+| /home/ayanami/HKSScript/Shared/Hir/Nodes/Branch.cs                                   | C#                 |         18 |          0 |          4 |         22 |
+| /home/ayanami/HKSScript/Shared/Hir/Nodes/Call.cs                                     | C#                 |         15 |          0 |          4 |         19 |
+| /home/ayanami/HKSScript/Shared/Hir/Nodes/HirBasicNode.cs                             | C#                 |         14 |          0 |          3 |         17 |
+| /home/ayanami/HKSScript/Shared/Hir/Nodes/Import.cs                                   | C#                 |         15 |          0 |          3 |         18 |
+| /home/ayanami/HKSScript/Shared/Hir/Nodes/New.cs                                      | C#                 |         18 |          0 |          4 |         22 |
+| /home/ayanami/HKSScript/Shared/Hir/Nodes/Return.cs                                   | C#                 |         21 |          0 |          3 |         24 |
+| /home/ayanami/HKSScript/Tests/test-regenerate-grammar.sh                             | Shell Script       |         37 |          6 |         12 |         55 |
+| /home/ayanami/HKSScript/regenerate-grammar.sh                                        | Shell Script       |          8 |          1 |          3 |         12 |
+| Total                                                                                |                    |     10,347 |      1,522 |      1,256 |     13,125 |
++--------------------------------------------------------------------------------------+--------------------+------------+------------+------------+------------+

@@ -4,6 +4,7 @@ using HksScript.Lexer;
 using HksScript.TypeChecker;
 using HksScript.Lowering;
 using Antlr4.Runtime;
+using System.Text.Json;
 
 namespace HksScript.Cli;
 
@@ -35,6 +36,9 @@ public class Cli
                 break;
             case "run":
                 RunFile(args[1]);
+                break;
+            case "code-present":
+                CodePresent(args[1]);
                 break;
             default:
                 PrintHelp();
@@ -140,12 +144,23 @@ public class Cli
         }
     }
 
+    private void CodePresent(string path)
+    {
+        var presenter = new CodePresenter();
+        var symbols = presenter.Present(path);
+        var json = JsonSerializer.Serialize(symbols, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+        Console.WriteLine(json);
+    }
+
     private void PrintHelp()
     {
         Console.WriteLine("用法: dotnet run -- <命令> [参数]");
         Console.WriteLine("命令:");
         Console.WriteLine("  list             列出已注册的算法函数");
         Console.WriteLine("  check <文件>     检查脚本类型");
-        Console.WriteLine("  run <文件>       执行脚本");
+        Console.WriteLine("  code-present <文件>  输出符号位置和类型");
     }
 }
