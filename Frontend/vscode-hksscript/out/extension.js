@@ -15,6 +15,14 @@ let decComment;
 let decString;
 let decNumber;
 function activate(context) {
+    console.log('HKS: activate');
+    // 状态栏
+    const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
+    item.text = 'HKS ✓';
+    item.show();
+    context.subscriptions.push(item);
+    console.log('HKS: status bar created');
+    // 装饰器
     decKeyword = vscode.window.createTextEditorDecorationType({ ...keywordColor });
     decType = vscode.window.createTextEditorDecorationType({ ...typeColor });
     decFunc = vscode.window.createTextEditorDecorationType({ ...functionColor });
@@ -22,8 +30,12 @@ function activate(context) {
     decString = vscode.window.createTextEditorDecorationType({ ...stringColor });
     decNumber = vscode.window.createTextEditorDecorationType({ ...numberColor });
     context.subscriptions.push(decKeyword, decType, decFunc, decComment, decString, decNumber);
+    console.log('HKS: decorations created');
     const update = (editor) => {
-        if (!editor || editor.document.languageId !== 'hkscript')
+        if (!editor)
+            return;
+        console.log('HKS: update lang=' + editor.document.languageId);
+        if (editor.document.languageId !== 'hkscript')
             return;
         highlight(editor);
     };
@@ -31,8 +43,12 @@ function activate(context) {
         if (vscode.window.activeTextEditor?.document === e.document)
             highlight(vscode.window.activeTextEditor);
     }));
-    // 推迟执行，等待编辑器就绪
-    setTimeout(() => update(vscode.window.activeTextEditor), 500);
+    console.log('HKS: listeners registered');
+    // 延迟执行，等编辑器就绪
+    setTimeout(() => {
+        console.log('HKS: timeout fired, editor=' + (vscode.window.activeTextEditor ? 'yes' : 'no'));
+        update(vscode.window.activeTextEditor);
+    }, 1000);
 }
 function highlight(editor) {
     const text = editor.document.getText();
