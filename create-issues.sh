@@ -2,6 +2,11 @@
 set -e
 cd "$(dirname "$0")"
 
+# 创建需要的 label（忽略已存在的错误）
+for label in setup lexer ast type-check hir runtime interpreter codegen cli integration optimization refactor enhancement; do
+    gh label create "$label" --color "0366d6" 2>/dev/null || true
+done
+
 # ─── 项目搭建 ───
 
 gh issue create --title "搭建项目：创建 .csproj + 目录结构" --label "setup" --body "
