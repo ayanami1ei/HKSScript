@@ -16,9 +16,15 @@ function activate(context) {
         console.log('HKS: editor lang=' + editor.document.languageId + ' uri=' + editor.document.uri.toString());
         if (editor.document.languageId !== 'hkscript')
             return;
-        const line = editor.document.lineAt(0);
-        console.log('HKS: applying decoration to line 0');
-        editor.setDecorations(dec, [new vscode.Range(line.range.start, line.range.end)]);
+        try {
+            const line = editor.document.lineAt(0);
+            console.log('HKS: line 0 length=' + line.text.length);
+            editor.setDecorations(dec, [new vscode.Range(line.range.start, line.range.end)]);
+            console.log('HKS: decoration applied');
+        }
+        catch (e) {
+            console.error('HKS: error: ' + e);
+        }
     }
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(update), vscode.workspace.onDidChangeTextDocument(e => {
         if (vscode.window.activeTextEditor?.document === e.document)
