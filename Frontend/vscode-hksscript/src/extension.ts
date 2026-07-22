@@ -5,7 +5,7 @@ const kwColor = { color: '#b784e0', fontWeight: 'bold' as const };
 const tpColor = { color: '#7ecf7e' };
 const fnColor = { color: '#e8c86a' };
 const vaColor = { color: '#7ab8e0' };
-const coColor = { color: '#5a5e6e', fontStyle: 'italic' as const };
+const coColor = { color: '#4a8a4a', fontStyle: 'italic' as const };
 const stColor = { color: '#6aa8e0' };
 const nuColor = { color: '#e09860' };
 
