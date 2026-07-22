@@ -1,22 +1,7 @@
 # HksScript Demo — 基础功能测试
 
-# 变量赋值
-a = 1
-b = 2.5
-c = "hello"
-img = load("test.png")
-
-# 函数调用
-circles = find_circles(img)
-print("done")
-
-# 表达式
-sum = a + 1
-big = a > b
-
 # 用户自定义函数
 def add(x: int, y: int) -> int:
     return x + y
 
 result = add(a, 5)
-print(result)

@@ -50,6 +50,24 @@ public class TypeChecker
         RegisterFunc("query",      new[] { "Set<Circle>", "bool" },"Set<Circle>");
         RegisterFunc("range",      new[] { "Set<Circle>" },        "Range");
         RegisterFunc("len",        new[] { "Set<Circle>" },        "int");
+
+        // 内置运算符
+        RegisterFunc("__add",   new[] { "int", "int" },  "int");
+        RegisterFunc("__sub",   new[] { "int", "int" },  "int");
+        RegisterFunc("__mul",   new[] { "int", "int" },  "int");
+        RegisterFunc("__div",   new[] { "int", "int" },  "int");
+        RegisterFunc("__gt",    new[] { "int", "int" },  "bool");
+        RegisterFunc("__ls",    new[] { "int", "int" },  "bool");
+        RegisterFunc("__eq",    new[] { "int", "int" },  "bool");
+        RegisterFunc("__neq",   new[] { "int", "int" },  "bool");
+        RegisterFunc("__le",    new[] { "int", "int" },  "bool");
+        RegisterFunc("__ge",    new[] { "int", "int" },  "bool");
+        RegisterFunc("__and",   new[] { "bool", "bool" },"bool");
+        RegisterFunc("__or",    new[] { "bool", "bool" },"bool");
+        RegisterFunc("__not",   new[] { "bool" },        "bool");
+        RegisterFunc("__union", new[] { "Set", "Set" },  "Set");
+        RegisterFunc("__intersect", new[] { "Set", "Set" },"Set");
+        RegisterFunc("__diff",  new[] { "Set", "Set" },  "Set");
     }
 
     public void RegisterFunc(string name, string[] paramTypes, string returnType)
@@ -230,6 +248,33 @@ public class TypeChecker
 
     private TypeRef? InferPipe(Pipe pipe)
     {
+        // a => f(b) → 类型检查时模拟 lowering: f(左值类型, 右参数类型)
+        if (pipe.Right is Call call)
+        {
+            var leftType = InferExpr(pipe.Left);
+            var argTypes = new List<TypeRef?> { leftType };
+            argTypes.AddRange(call.Args.Select(InferExpr));
+
+            if (!functions.TryGetValue(call.Name, out var sigs))
+            {
+                result.Error($"未定义的函数: {call.Name}");
+                return null;
+            }
+
+            var argNames = argTypes.Select(t => t?.Name ?? "?").ToArray();
+            var matched = sigs.FirstOrDefault(s =>
+                s.ParamTypes.Length == argNames.Length &&
+                s.ParamTypes.SequenceEqual(argNames));
+
+            if (matched == null)
+            {
+                result.Error($"pipe {call.Name} 参数不匹配: 需要 ({string.Join(", ", sigs[0].ParamTypes)}), 实际 ({string.Join(", ", argNames)})");
+                return null;
+            }
+
+            return new TypeRef(matched.ReturnType);
+        }
+
         return InferExpr(pipe.Right) ?? InferExpr(pipe.Left);
     }
 
