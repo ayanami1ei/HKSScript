@@ -58,7 +58,9 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function highlight(editor: vscode.TextEditor) {
+    console.log('HKS: highlight start');
     const text = editor.document.getText();
+    console.log('HKS: text length=' + text.length);
     const kw: vscode.Range[] = [];
     const tp: vscode.Range[] = [];
     const fn: vscode.Range[] = [];
@@ -66,33 +68,30 @@ function highlight(editor: vscode.TextEditor) {
     const st: vscode.Range[] = [];
     const nu: vscode.Range[] = [];
 
-    // 字符串区域，避免内部匹配
+    // 先标记字符串区域
     const strRanges: { start: number; end: number }[] = [];
     const strRe = /"(\\.|[^"\\])*"/g;
     let m: RegExpExecArray | null;
     while ((m = strRe.exec(text)) !== null) {
         strRanges.push({ start: m.index, end: m.index + m[0].length });
-        st.push(new vscode.Range(
-            editor.document.positionAt(m.index),
-            editor.document.positionAt(m.index + m[0].length)
-        ));
+        st.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
     }
+    console.log('HKS: strings=' + st.length);
     const inStr = (pos: number) => strRanges.some(r => pos >= r.start && pos < r.end);
 
     // 注释
     const commentRe = /#[^\n]*/g;
     while ((m = commentRe.exec(text)) !== null) {
-        co.push(new vscode.Range(
-            editor.document.positionAt(m.index),
-            editor.document.positionAt(m.index + m[0].length)
-        ));
+        co.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
     }
+    console.log('HKS: comments=' + co.length);
 
     // 数字
     const numRe = /\b\d+(\.\d+)?\b/g;
     while ((m = numRe.exec(text)) !== null) {
         if (!inStr(m.index)) nu.push(posRange(editor, m.index, m[0].length));
     }
+    console.log('HKS: numbers=' + nu.length);
 
     // 关键字
     const kws = ['import','def','if','elif','else','return','query','from','with','and','or','not','true','false'];
@@ -100,6 +99,7 @@ function highlight(editor: vscode.TextEditor) {
         const re = new RegExp('\\b' + kwName + '\\b', 'g');
         while ((m = re.exec(text)) !== null) { if (!inStr(m.index)) kw.push(posRange(editor, m.index, m[0].length)); }
     }
+    console.log('HKS: keywords=' + kw.length);
 
     // 类型名
     const typeNames = ['int','float','string','bool','Mat','Set','Circle','Range','void'];
@@ -107,6 +107,7 @@ function highlight(editor: vscode.TextEditor) {
         const re = new RegExp('\\b' + tn + '\\b', 'g');
         while ((m = re.exec(text)) !== null) { if (!inStr(m.index)) tp.push(posRange(editor, m.index, m[0].length)); }
     }
+    console.log('HKS: types=' + tp.length);
 
     // 内置函数
     const builtins = ['load','save','print','len','range'];
@@ -115,7 +116,7 @@ function highlight(editor: vscode.TextEditor) {
         while ((m = re.exec(text)) !== null) { if (!inStr(m.index)) fn.push(posRange(editor, m.index, m[0].length)); }
     }
 
-    // 函数调用: word + '('
+    // 函数调用
     const callRe = /\b([a-zA-Z_]\w*)\s*\(/g;
     while ((m = callRe.exec(text)) !== null) {
         if (inStr(m.index)) continue;
@@ -123,13 +124,16 @@ function highlight(editor: vscode.TextEditor) {
         if (kws.includes(name) || typeNames.includes(name) || builtins.includes(name)) continue;
         fn.push(posRange(editor, m.index, name.length));
     }
+    console.log('HKS: functions=' + fn.length);
 
+    console.log('HKS: setting decorations');
     editor.setDecorations(decKeyword, kw);
     editor.setDecorations(decType, tp);
     editor.setDecorations(decFunc, fn);
     editor.setDecorations(decComment, co);
     editor.setDecorations(decString, st);
     editor.setDecorations(decNumber, nu);
+    console.log('HKS: done');
 }
 
 function posRange(editor: vscode.TextEditor, offset: number, length: number): vscode.Range {
