@@ -108,20 +108,22 @@ class SymbolCollector : HksScriptBaseListener
 
     public override void EnterExprStmt(HksScriptParser.ExprStmtContext ctx)
     {
-        // 表达式语句中的函数调用
-        if (ctx.expr() is HksScriptParser.CallExprContext call)
-        {
-            var id = call.ID();
-            var name = id.GetText();
-            var resolved = checker.ResolveType(name);
+        // 表达式语句中的函数调用由 EnterCallExpr 处理，不重复
+    }
 
-            symbols.Add(new SymbolInfo
-            {
-                Name = name, Kind = "function", Type = checker.ResolveFuncType(name) ?? "?",
-                Line = id.Symbol.Line, Column = id.Symbol.Column,
-                Length = name.Length
-            });
-        }
+    public override void EnterCallExpr(HksScriptParser.CallExprContext ctx)
+    {
+        var id = ctx.ID();
+        var name = id.GetText();
+        if (string.IsNullOrEmpty(name)) return;
+
+        symbols.Add(new SymbolInfo
+        {
+            Name = name, Kind = "function",
+            Type = checker.ResolveFuncType(name) ?? "?",
+            Line = id.Symbol.Line, Column = id.Symbol.Column,
+            Length = name.Length
+        });
     }
 
     public override void EnterVarExpr(HksScriptParser.VarExprContext ctx)
