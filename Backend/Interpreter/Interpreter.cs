@@ -105,6 +105,7 @@ public class Interpreter : HirRunner
 
     private void RunImport(Import hir)
     {
-        throw new Exception("todo: import");
+        foreach (var mod in hir.Imported)
+            funcTable.ImportModule(mod);
     }
 }

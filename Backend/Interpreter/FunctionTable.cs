@@ -9,42 +9,51 @@ public record ExternalFunction(string Name, Func<object?[], object?> Impl) : Fun
 
 public record ScriptFunction(string Name, string[] Params, int[] ParamIds, HirBasicNode[] Body) : Function(Name);
 
+public class ModuleConfig
+{
+    public Dictionary<string, ModuleDef> Modules { get; set; } = [];
+}
+
+public class ModuleDef
+{
+    public string Init { get; set; } = "";       // 初始化函数名
+    public string[] Functions { get; set; } = []; // 模块提供的函数列表
+}
+
 public class FunctionTable
 {
     private Dictionary<string, Function> funcs = [];
+    private ModuleConfig? moduleConfig;
 
     public void Register(string name, Function func) => funcs[name] = func;
 
-    public Function Find(string name) => funcs.TryGetValue(name, out var f) ? f
-        : throw new Exception($"未定义的函数: {name}");
+    public Function Find(string name) =>
+        funcs.TryGetValue(name, out var f) ? f
+            : throw new Exception($"未定义的函数: {name}");
 
-    // 从 JSON 配置加载外部函数
-    public static FunctionTable LoadConfig(string configPath)
+    public bool IsImported(string name) => funcs.ContainsKey(name);
+
+    // 从 JSON 加载模块配置
+    public void LoadModules(string configPath)
     {
-        var table = new FunctionTable();
-
         var json = File.ReadAllText(configPath);
-        var config = JsonSerializer.Deserialize<Config>(json);
+        moduleConfig = JsonSerializer.Deserialize<ModuleConfig>(json);
+    }
 
-        if (config == null)
+    // 执行 import：调用模块的初始化函数
+    public void ImportModule(string name)
+    {
+        if (moduleConfig?.Modules.TryGetValue(name, out var mod) != true)
+            throw new Exception($"未定义的模块: {name}");
+
+        // 调用初始化函数
+        if (!string.IsNullOrEmpty(mod.Init))
         {
-            throw new Exception("config dosen't exist");
+            var initFunc = Find(mod.Init);
+            if (initFunc is ExternalFunction ext)
+                ext.Impl([]);
         }
 
-        foreach (var algo in config.Algorithms)
-            table.RegisterAlgo(algo);
-
-        return table;
+        // 注册模块的所有函数（实际注册在初始化函数内部完成）
     }
-
-    private void RegisterAlgo(string name)
-    {
-        // 扫描 plugins/{name}.dll 或 .so，注册其导出函数
-        // 具体实现由算法层提供
-    }
-}
-
-class Config
-{
-    public string[] Algorithms { get; set; } = [];
 }
