@@ -4,6 +4,7 @@ using HksScript.Lexer;
 using HksScript.TypeChecker;
 using HksScript.Lowering;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using System.Text.Json;
 
 namespace HksScript.Cli;
@@ -11,6 +12,14 @@ namespace HksScript.Cli;
 public class Cli
 {
     private FunctionTable funcTable = new();
+
+    // ANSI 颜色
+    const string Red    = "\u001b[31m";
+    const string Green  = "\u001b[32m";
+    const string Yellow = "\u001b[33m";
+    const string Cyan   = "\u001b[36m";
+    const string Bold   = "\u001b[1m";
+    const string Reset  = "\u001b[0m";
 
     public Cli()
     {
@@ -20,37 +29,21 @@ public class Cli
 
     public void Run(string[] args)
     {
-        if (args.Length == 0)
-        {
-            PrintHelp();
-            return;
-        }
-
+        if (args.Length == 0) { PrintHelp(); return; }
         switch (args[0])
         {
-            case "list":
-                ListFunctions();
-                break;
-            case "check":
-                CheckFile(args[1]);
-                break;
-            case "run":
-                RunFile(args[1]);
-                break;
-            case "code-present":
-                CodePresent(args[1]);
-                break;
-            default:
-                PrintHelp();
-                break;
+            case "list":          ListFunctions();       break;
+            case "check":         CheckFile(args[1]);    break;
+            case "run":           RunFile(args[1]);      break;
+            case "code-present":  CodePresent(args[1]);  break;
+            default:              PrintHelp();           break;
         }
     }
 
-    // ─── 管线：源码 → AST ───
+    // ─── 管线 ───
 
-    private Ast.Program? BuildAst(string path, out CheckResult? checkResult)
+    private (Ast.Program? ast, HksScriptParser.ProgramContext? tree) BuildAst(string path)
     {
-        checkResult = null;
         var code = File.ReadAllText(path);
         var stream = new AntlrInputStream(code);
         var lexer = new HksScriptLexer(stream);
@@ -71,50 +64,90 @@ public class Cli
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"解析失败: {ex.Message}");
-            return null;
+            Console.Error.WriteLine($"{Red}解析失败: {ex.Message}{Reset}");
+            return (null, null);
         }
 
-        var checker = new TypeChecker.TypeChecker();
-        checkResult = checker.Check(ast);
-        return ast;
+        return (ast, tree);
     }
 
     // ─── check 命令 ───
 
     private void CheckFile(string path)
     {
-        var ast = BuildAst(path, out var checkResult);
+        var code = File.ReadAllText(path);
+        var lines = code.Split('\n');
+        var (ast, tree) = BuildAst(path);
         if (ast == null) return;
 
-        bool hasError = false;
+        var checker = new TypeChecker.TypeChecker();
+        var result = checker.Check(ast);
 
-        if (checkResult!.HasErrors)
+        if (!result.HasErrors)
         {
-            Console.WriteLine("类型错误:");
-            foreach (var err in checkResult.Errors)
+            Console.WriteLine($"{Green}检查通过{Reset}");
+            return;
+        }
+
+        foreach (var err in result.Errors)
+        {
+            int lineNum = FindErrorLine(err.Message, tree, lines);
+            Console.Write($"{Red}error{Reset}");
+
+            if (lineNum > 0)
+                Console.Write($" {Cyan}{path}:{lineNum}{Reset}");
+
+            Console.WriteLine($" {Bold}{err.Message}{Reset}");
+
+            if (lineNum > 0 && lineNum <= lines.Length)
             {
-                Console.WriteLine($"  {err}");
-                hasError = true;
+                var line = lines[lineNum - 1].Replace("\r", "");
+                Console.WriteLine($"  {Cyan}{lineNum,4} |{Reset} {line}");
+                Console.WriteLine($"       {Yellow}^{Reset}");
             }
         }
 
-        if (!hasError)
-            Console.WriteLine("检查通过");
+        Console.WriteLine($"\n{Red}发现 {result.Errors.Count} 个错误{Reset}");
+    }
+
+    private static int FindErrorLine(string message, HksScriptParser.ProgramContext? tree, string[] lines)
+    {
+        // 从错误消息中提取标识符名称
+        var name = "";
+        foreach (var prefix in new[] { "未定义的变量: ", "未定义的函数: " })
+        {
+            if (message.StartsWith(prefix))
+            {
+                name = message[prefix.Length..].Trim();
+                break;
+            }
+        }
+        if (string.IsNullOrEmpty(name)) return -1;
+
+        // 在源码中逐行查找
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].Contains(name))
+                return i + 1;
+        }
+        return -1;
     }
 
     // ─── run 命令 ───
 
     private void RunFile(string path)
     {
-        var ast = BuildAst(path, out var checkResult);
+        var (ast, _) = BuildAst(path);
         if (ast == null) return;
 
-        if (checkResult!.HasErrors)
+        var checker = new TypeChecker.TypeChecker();
+        var result = checker.Check(ast);
+
+        if (result.HasErrors)
         {
-            Console.WriteLine("类型错误，终止执行:");
-            foreach (var err in checkResult.Errors)
-                Console.WriteLine($"  {err}");
+            Console.WriteLine($"{Red}类型错误，终止执行:{Reset}");
+            foreach (var err in result.Errors)
+                Console.WriteLine($"  {err.Message}");
             return;
         }
 
@@ -124,25 +157,10 @@ public class Cli
         var vm = new HksScript.Interpreter.Interpreter(hir, funcTable);
         vm.Run();
 
-        Console.WriteLine("执行完成");
+        Console.WriteLine($"{Green}执行完成{Reset}");
     }
 
-    private void ListFunctions()
-    {
-        Console.WriteLine("已注册的函数:");
-        var names = new[] { "imread", "imwrite", "gray", "gaussian_blur", "median_blur", "canny",
-                            "erode", "dilate", "threshold", "hough_circles",
-                            "resize", "__init_basic" };
-        foreach (var name in names)
-        {
-            try
-            {
-                funcTable.Find(name);
-                Console.WriteLine($"  {name}");
-            }
-            catch { }
-        }
-    }
+    // ─── code-present ───
 
     private void CodePresent(string path)
     {
@@ -155,12 +173,25 @@ public class Cli
         Console.WriteLine(json);
     }
 
+    private void ListFunctions()
+    {
+        Console.WriteLine("已注册的函数:");
+        var names = new[] { "imread", "imwrite", "gray", "gaussian_blur", "median_blur", "canny",
+                            "erode", "dilate", "threshold", "hough_circles",
+                            "resize", "__init_basic" };
+        foreach (var name in names)
+        {
+            try { funcTable.Find(name); Console.WriteLine($"  {name}"); }
+            catch { }
+        }
+    }
+
     private void PrintHelp()
     {
         Console.WriteLine("用法: dotnet run -- <命令> [参数]");
         Console.WriteLine("命令:");
         Console.WriteLine("  list             列出已注册的算法函数");
         Console.WriteLine("  check <文件>     检查脚本类型");
-        Console.WriteLine("  code-present <文件>  输出符号位置和类型");
+        Console.WriteLine("  run <文件>       执行脚本");
     }
 }

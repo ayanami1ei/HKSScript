@@ -2,11 +2,24 @@ using HksScript.Ast;
 
 namespace HksScript.TypeChecker;
 
+public class TypeError
+{
+    public string Message { get; set; } = "";
+    public int Line { get; set; } = -1;
+
+    public TypeError(string message, int line = -1)
+    {
+        Message = message;
+        Line = line;
+    }
+}
+
 public class CheckResult
 {
-    public List<string> Errors { get; } = new();
+    public List<TypeError> Errors { get; } = new();
     public bool HasErrors => Errors.Count > 0;
-    public void Error(string message) => Errors.Add(message);
+    public void Error(string message, int line = -1)
+        => Errors.Add(new TypeError(message, line));
 }
 
 public class TypeChecker
