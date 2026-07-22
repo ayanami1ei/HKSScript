@@ -91,6 +91,16 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitExprStmt([NotNull] HksScriptParser.ExprStmtContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="HksScriptParser.returnStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterReturnStmt([NotNull] HksScriptParser.ReturnStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="HksScriptParser.returnStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitReturnStmt([NotNull] HksScriptParser.ReturnStmtContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="HksScriptParser.ifStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -177,6 +187,18 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitOrExpr([NotNull] HksScriptParser.OrExprContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>diffExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterDiffExpr([NotNull] HksScriptParser.DiffExprContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>diffExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitDiffExpr([NotNull] HksScriptParser.DiffExprContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>unionExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// </summary>
@@ -188,6 +210,18 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitUnionExpr([NotNull] HksScriptParser.UnionExprContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>queryCallExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterQueryCallExpr([NotNull] HksScriptParser.QueryCallExprContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>queryCallExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitQueryCallExpr([NotNull] HksScriptParser.QueryCallExprContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>parenExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
@@ -308,6 +342,36 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitAndExpr([NotNull] HksScriptParser.AndExprContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="HksScriptParser.compOp"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterCompOp([NotNull] HksScriptParser.CompOpContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="HksScriptParser.compOp"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitCompOp([NotNull] HksScriptParser.CompOpContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="HksScriptParser.addOp"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterAddOp([NotNull] HksScriptParser.AddOpContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="HksScriptParser.addOp"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitAddOp([NotNull] HksScriptParser.AddOpContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="HksScriptParser.mulOp"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterMulOp([NotNull] HksScriptParser.MulOpContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="HksScriptParser.mulOp"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitMulOp([NotNull] HksScriptParser.MulOpContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="HksScriptParser.condition"/>.
 	/// </summary>

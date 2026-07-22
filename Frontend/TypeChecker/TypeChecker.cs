@@ -1,0 +1,247 @@
+using HksScript.Ast;
+
+namespace HksScript.TypeChecker;
+
+public class CheckResult
+{
+    public List<string> Errors { get; } = new();
+    public bool HasErrors => Errors.Count > 0;
+    public void Error(string message) => Errors.Add(message);
+}
+
+public class TypeChecker
+{
+    private readonly SymbolTable symbols = new();
+    private readonly CheckResult result = new();
+    private readonly Dictionary<string, List<FunctionSig>> functions = new();
+
+    public TypeChecker()
+    {
+        RegisterBuiltins();
+    }
+
+    public CheckResult Check(Ast.Program program)
+    {
+        foreach (var stmt in program.Statements)
+            VisitStmt(stmt);
+        return result;
+    }
+
+    private void RegisterBuiltins()
+    {
+        RegisterFunc("load",       new[] { "string" },             "Mat");
+        RegisterFunc("imread",     new[] { "string" },             "Mat");
+        RegisterFunc("imwrite",    new[] { "string", "Mat" },      "void");
+        RegisterFunc("gray",       new[] { "Mat" },                "Mat");
+        RegisterFunc("gaussian_blur", new[] { "Mat", "float" },    "Mat");
+        RegisterFunc("median_blur",  new[] { "Mat", "int" },      "Mat");
+        RegisterFunc("canny",      new[] { "Mat", "float", "float" },"Mat");
+        RegisterFunc("erode",      new[] { "Mat", "int" },         "Mat");
+        RegisterFunc("dilate",     new[] { "Mat", "int" },         "Mat");
+        RegisterFunc("threshold",  new[] { "Mat", "float", "float" },"Mat");
+        RegisterFunc("hough_circles", new[] { "Mat", "float", "float" },"Set<Circle>");
+        RegisterFunc("resize",     new[] { "Mat", "float" },       "Mat");
+        RegisterFunc("find_circles", new[] { "Mat" },              "Set<Circle>");
+        RegisterFunc("save",       new[] { "Mat", "string" },      "void");
+        RegisterFunc("print",      new[] { "string" },             "void");
+        RegisterFunc("print",      new[] { "int" },                "void");
+        RegisterFunc("print",      new[] { "float" },              "void");
+        RegisterFunc("print",      new[] { "bool" },               "void");
+        RegisterFunc("query",      new[] { "Set<Circle>", "bool" },"Set<Circle>");
+        RegisterFunc("range",      new[] { "Set<Circle>" },        "Range");
+        RegisterFunc("len",        new[] { "Set<Circle>" },        "int");
+    }
+
+    public void RegisterFunc(string name, string[] paramTypes, string returnType)
+    {
+        if (!functions.ContainsKey(name))
+            functions[name] = new List<FunctionSig>();
+        functions[name].Add(new FunctionSig(name, paramTypes, returnType));
+    }
+
+    private void VisitStmt(Stmt stmt)
+    {
+        switch (stmt)
+        {
+            case Import i:       VisitImport(i);     break;
+            case Assign a:       VisitAssign(a);     break;
+            case FuncDef f:      VisitFuncDef(f);    break;
+            case Return r:       VisitReturn(r);     break;
+            case If ifStmt:      VisitIf(ifStmt);    break;
+            case ExprStmt es:    InferExpr(es.Value); break;
+        }
+    }
+
+    private void VisitImport(Import imp) { }
+
+    private void VisitAssign(Assign assign)
+    {
+        var type = InferExpr(assign.Value);
+        if (type != null)
+            symbols.Define(assign.Name, type);
+    }
+
+    private void VisitFuncDef(FuncDef funcDef)
+    {
+        var paramTypes = funcDef.Params.Select(p => p.Type.Name).ToArray();
+        var returnType = funcDef.ReturnType?.Name ?? "void";
+        RegisterFunc(funcDef.Name, paramTypes, returnType);
+
+        symbols.EnterScope();
+        foreach (var param in funcDef.Params)
+            symbols.Define(param.Name, param.Type);
+        foreach (var stmt in funcDef.Body)
+            VisitStmt(stmt);
+        symbols.ExitScope();
+    }
+
+    private void VisitReturn(Return ret)
+    {
+        if (ret.Value != null) InferExpr(ret.Value);
+    }
+
+    private void VisitIf(If ifStmt)
+    {
+        InferExpr(ifStmt.Condition);
+        symbols.EnterScope();
+        foreach (var s in ifStmt.Then) VisitStmt(s);
+        symbols.ExitScope();
+        foreach (var elif in ifStmt.Elifs)
+        {
+            InferExpr(elif.Condition);
+            symbols.EnterScope();
+            foreach (var s in elif.Body) VisitStmt(s);
+            symbols.ExitScope();
+        }
+        if (ifStmt.Else != null)
+        {
+            symbols.EnterScope();
+            foreach (var s in ifStmt.Else) VisitStmt(s);
+            symbols.ExitScope();
+        }
+    }
+
+    private TypeRef? InferExpr(Expr expr)
+    {
+        return expr switch
+        {
+            Literal lit    => InferLiteral(lit),
+            Variable var   => InferVariable(var),
+            Call call      => InferCall(call),
+            Binary bin     => InferBinary(bin),
+            Unary unary    => InferUnary(unary),
+            QueryFrom qf   => InferQueryFrom(qf),
+            Pipe pipe      => InferPipe(pipe),
+            _ => null
+        };
+    }
+
+    private static TypeRef InferLiteral(Literal lit)
+    {
+        return lit.Value switch
+        {
+            int    => new TypeRef("int"),
+            float  => new TypeRef("float"),
+            string => new TypeRef("string"),
+            bool   => new TypeRef("bool"),
+            _      => new TypeRef("unknown")
+        };
+    }
+
+    private TypeRef? InferVariable(Variable var)
+    {
+        var resolved = symbols.Resolve(var.Name);
+        if (resolved == null)
+            result.Error($"未定义的变量: {var.Name}");
+        return resolved;
+    }
+
+    private TypeRef? InferCall(Call call)
+    {
+        if (!functions.TryGetValue(call.Name, out var sigs))
+        {
+            result.Error($"未定义的函数: {call.Name}");
+            return null;
+        }
+
+        var argTypes = call.Args.Select(a => InferExpr(a)).ToList();
+        if (argTypes.Any(t => t == null)) return null;
+
+        var argNames = argTypes.Select(t => t!.Name).ToArray();
+
+        var matched = sigs.FirstOrDefault(s =>
+            s.ParamTypes.Length == argNames.Length &&
+            s.ParamTypes.SequenceEqual(argNames));
+
+        if (matched == null)
+        {
+            var expected = sigs[0].ParamTypes.Length == argNames.Length
+                ? string.Join(", ", sigs[0].ParamTypes)
+                : $"{sigs[0].ParamTypes.Length}个参数";
+            result.Error($"函数 {call.Name} 参数不匹配: 需要 ({expected}), 实际 ({string.Join(", ", argNames)})");
+            return null;
+        }
+
+        return new TypeRef(matched.ReturnType);
+    }
+
+    private TypeRef? InferBinary(Binary bin)
+    {
+        var left = InferExpr(bin.Left);
+        var right = InferExpr(bin.Right);
+        if (left == null || right == null) return null;
+
+        if (left.Name == "int" && right.Name == "int")
+        {
+            if (IsComparison(bin.Op) || IsLogical(bin.Op))
+                return new TypeRef("bool");
+            return new TypeRef("int");
+        }
+        if (left.Name == "float" && right.Name == "float")
+        {
+            if (IsComparison(bin.Op)) return new TypeRef("bool");
+            return new TypeRef("float");
+        }
+        if (left.Name == "bool" && right.Name == "bool" && IsLogical(bin.Op))
+            return new TypeRef("bool");
+        if (IsSetOp(bin.Op) && left.Name == right.Name)
+            return left;
+        if (IsComparison(bin.Op))
+            return new TypeRef("bool");
+
+        result.Error($"类型不匹配: {left.Name} {bin.Op} {right.Name}");
+        return null;
+    }
+
+    private TypeRef? InferUnary(Unary unary)
+    {
+        var op = InferExpr(unary.Operand);
+        if (op != null && op.Name != "bool")
+            result.Error($"not 需要 bool 类型，实际 {op.Name}");
+        return new TypeRef("bool");
+    }
+
+    private TypeRef? InferQueryFrom(QueryFrom qf)
+    {
+        InferExpr(qf.Collection);
+        InferExpr(qf.Condition);
+        return new TypeRef("Set<Circle>");
+    }
+
+    private TypeRef? InferPipe(Pipe pipe)
+    {
+        return InferExpr(pipe.Right) ?? InferExpr(pipe.Left);
+    }
+
+    private static bool IsComparison(BinaryOp op) => op is
+        BinaryOp.Ls or BinaryOp.Gr or BinaryOp.Eq
+        or BinaryOp.Neq or BinaryOp.Le or BinaryOp.Ge;
+
+    private static bool IsLogical(BinaryOp op) => op is
+        BinaryOp.And or BinaryOp.Or;
+
+    private static bool IsSetOp(BinaryOp op) => op is
+        BinaryOp.Union or BinaryOp.Intersect or BinaryOp.Diff;
+}
+
+public record FunctionSig(string Name, string[] ParamTypes, string ReturnType);

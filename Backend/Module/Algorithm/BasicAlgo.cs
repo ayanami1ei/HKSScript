@@ -1,4 +1,3 @@
-using NUnit.Framework.Internal.Execution;
 using OpenCvSharp;
 
 namespace HksScript.Algorithms;
@@ -77,5 +76,20 @@ public static class BasicAlgo
         var dst = new Mat();
         Cv2.Resize(src, dst, new Size(0, 0), scale, scale);
         return dst;
+    }
+
+    // 读取图像
+    public static Mat ImRead(string path)
+    {
+        var img = Cv2.ImRead(path);
+        if (img.Empty())
+            throw new Exception($"无法读取图像: {path}");
+        return img;
+    }
+
+    // 保存图像
+    public static void ImWrite(string path, Mat img)
+    {
+        Cv2.ImWrite(path, img);
     }
 }

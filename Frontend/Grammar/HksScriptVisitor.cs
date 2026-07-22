@@ -68,6 +68,12 @@ public interface IHksScriptVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitExprStmt([NotNull] HksScriptParser.ExprStmtContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="HksScriptParser.returnStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitReturnStmt([NotNull] HksScriptParser.ReturnStmtContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="HksScriptParser.ifStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -119,12 +125,26 @@ public interface IHksScriptVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitOrExpr([NotNull] HksScriptParser.OrExprContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>diffExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitDiffExpr([NotNull] HksScriptParser.DiffExprContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>unionExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitUnionExpr([NotNull] HksScriptParser.UnionExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>queryCallExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitQueryCallExpr([NotNull] HksScriptParser.QueryCallExprContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>parenExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
@@ -195,6 +215,24 @@ public interface IHksScriptVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitAndExpr([NotNull] HksScriptParser.AndExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="HksScriptParser.compOp"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitCompOp([NotNull] HksScriptParser.CompOpContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="HksScriptParser.addOp"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitAddOp([NotNull] HksScriptParser.AddOpContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="HksScriptParser.mulOp"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitMulOp([NotNull] HksScriptParser.MulOpContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="HksScriptParser.condition"/>.
 	/// </summary>

@@ -1,35 +1,22 @@
-# HksScript Demo
+# HksScript Demo — 基础功能测试
 
-import find_circle, locator
-
-# 用户自定义函数，显式返回值类型
-def process_batch(path) -> List<Circle>:
-    imgs = load(path)
-    return find_circles(imgs)
-
-# 单图处理
+# 变量赋值
+a = 1
+b = 2.5
+c = "hello"
 img = load("test.png")
+
+# 函数调用
 circles = find_circles(img)
-
-# query 语法糖写法
-r1 = query from circles with area < 0
-
-# query 函数调用写法（等价）
-r2 = query(circles, area < 0 or area > 10)
-
-# 管道链式处理
-# 上一步结果自动填入下一步的第一个类型兼容参数
-load("batch/*.png") => find_circles() => query(area > 10) => save("output/")
-
-# 等价于不带 pipe 的写法：
-# imgs = load("batch/*.png")
-# all_circles = find_circles(imgs)
-# filtered = query(all_circles, area > 10)
-# save(filtered, "output/")
-
-# 集合操作（运算符语法糖）
-big = query from all_circles with area > 50
-small = query from all_circles with area < 10
-mid = all_circles - (big | small)
-
 print("done")
+
+# 表达式
+sum = a + 1
+big = a > b
+
+# 用户自定义函数
+def add(x: int, y: int) -> int:
+    return x + y
+
+result = add(a, 5)
+print(result)
