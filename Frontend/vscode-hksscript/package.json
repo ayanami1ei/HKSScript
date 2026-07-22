@@ -11,8 +11,12 @@
   "engines": {
     "vscode": "^1.80.0"
   },
-  "categories": ["Programming Languages"],
-  "activationEvents": ["onLanguage:hksscript"],
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:hksscript"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
@@ -25,8 +29,8 @@
         "extensions": [
           ".hks"
         ],
-    "configuration": "./language-configuration.json",
-    "semanticHighlighting": true
+        "configuration": "./language-configuration.json",
+        "semanticHighlighting": true
       }
     ],
     "configuration": {
@@ -44,10 +48,18 @@
       {
         "language": "hkscript",
         "scopes": {
-          "function": ["entity.name.function"],
-          "variable": ["variable.other"],
-          "type": ["support.type"],
-          "keyword": ["keyword.control"]
+          "function": [
+            "entity.name.function"
+          ],
+          "variable": [
+            "variable.other"
+          ],
+          "type": [
+            "support.type"
+          ],
+          "keyword": [
+            "keyword.control"
+          ]
         }
       }
     ]
