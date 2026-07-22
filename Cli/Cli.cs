@@ -157,16 +157,19 @@ public class Cli
 
             foreach (var err in result.Errors)
             {
-                int line = 1;
-                // 从错误消息提取变量名
-                foreach (var prefix in new[] { "未定义的变量: ", "未定义的函数: " })
+                // 优先用 AST 位置，其次用 ANTLR 树查标识符
+                int line = err.Line > 0 ? err.Line : 1;
+                if (line <= 1)
                 {
-                    if (err.Message.StartsWith(prefix))
+                    foreach (var prefix in new[] { "未定义的变量: ", "未定义的函数: " })
                     {
-                        var name = err.Message[prefix.Length..].Trim();
-                        if (idPositions.TryGetValue(name, out var pos))
-                            line = pos.line;
-                        break;
+                        if (err.Message.StartsWith(prefix))
+                        {
+                            var name = err.Message[prefix.Length..].Trim();
+                            if (idPositions.TryGetValue(name, out var pos))
+                                line = pos.line;
+                            break;
+                        }
                     }
                 }
                 errors.Add(new { message = err.Message, line, column = 0 });
