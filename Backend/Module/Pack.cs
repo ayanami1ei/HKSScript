@@ -1,44 +1,29 @@
-public abstract class Pack<T>;
+using System.Collections;
 
-public class One<T>(T Value) : Pack<T>
+public class ScriptSet : IEnumerable
 {
-    public T Value { get; } = Value;
-}
+    private readonly List<object?> _items;
 
-public class Many<T>(IEnumerable<T> items) : Pack<T>
-{
-    private readonly List<T> _items = items.ToList();
-
-    public IReadOnlyList<T> Values => _items;
     public int Len => _items.Count;
 
-    public Many<T> Map(Func<T, T> fn)
-    {
-        return new Many<T>(_items.Select(fn));
-    }
+    public ScriptSet() => _items = new();
+    public ScriptSet(IEnumerable<object?> items) => _items = items.ToList();
 
-    public Many<T> Query(Func<T, bool> pred)
-    {
-        return new Many<T>(_items.Where(pred));
-    }
+    public ScriptSet Query(Func<object?, bool> pred)
+        => new(_items.Where(pred));
 
-    public T? First() => _items.FirstOrDefault();
-    public List<T> ToList() => new(_items);
-
-    public Many<T> Union(Many<T> other)
+    public ScriptSet Union(ScriptSet other)
     {
-        var set = new HashSet<T>(_items);
+        var set = new HashSet<object?>(_items);
         set.UnionWith(other._items);
-        return new Many<T>(set);
+        return new ScriptSet(set);
     }
 
-    public Many<T> Intersect(Many<T> other)
-    {
-        return new Many<T>(_items.Intersect(other._items));
-    }
+    public ScriptSet Intersect(ScriptSet other)
+        => new(_items.Intersect(other._items));
 
-    public Many<T> Diff(Many<T> other)
-    {
-        return new Many<T>(_items.Except(other._items));
-    }
+    public ScriptSet Diff(ScriptSet other)
+        => new(_items.Except(other._items));
+
+    public IEnumerator GetEnumerator() => _items.GetEnumerator();
 }

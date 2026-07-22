@@ -23,11 +23,13 @@ public static class BuiltinRegistry
 
         // 集合查询
         table.Register("query", new ExternalFunction("query",
-            args => args[0]));
+            args => args[0]));  // 简化
         table.Register("range", new ExternalFunction("range",
-            args => Enumerable.Range(0, args[0] is int i ? i : 0)));
+            args => Enumerable.Range(0, (int)args[0]!).ToList()));
         table.Register("len", new ExternalFunction("len",
-            args => args[0] is System.Collections.ICollection c ? c.Count : 0));
+            args => args[0] is ScriptSet s ? s.Len
+                  : args[0] is ICollection c ? c.Count
+                  : 0));
 
         // 算术
         table.Register("__add", new ExternalFunction("__add",
@@ -63,10 +65,10 @@ public static class BuiltinRegistry
 
         // 集合
         table.Register("__union", new ExternalFunction("__union",
-            args => ((Many<object>)args[0]!).Union((Many<object>)args[1]!)));
+            args => ((ScriptSet)args[0]!).Union((ScriptSet)args[1]!)));
         table.Register("__intersect", new ExternalFunction("__intersect",
-            args => ((Many<object>)args[0]!).Intersect((Many<object>)args[1]!)));
+            args => ((ScriptSet)args[0]!).Intersect((ScriptSet)args[1]!)));
         table.Register("__diff", new ExternalFunction("__diff",
-            args => ((Many<object>)args[0]!).Diff((Many<object>)args[1]!)));
+            args => ((ScriptSet)args[0]!).Diff((ScriptSet)args[1]!)));
     }
 }
