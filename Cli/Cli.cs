@@ -2,6 +2,8 @@ using HksScript.Interpreter;
 using HksScript.Algorithms;
 using HksScript.Lexer;
 using HksScript.TypeChecker;
+using HksScript.Lowering;
+using HksScript.Hir;
 using Antlr4.Runtime;
 
 namespace HksScript.Cli;
@@ -79,6 +81,26 @@ public class Cli
         else
         {
             Console.WriteLine("\n类型检查通过");
+        }
+
+        // Lowering → HIR
+        var lowerer = new LoweringPass();
+        var hir = lowerer.Lower(ast);
+        Console.WriteLine($"\n=== HIR ({hir.Length} 条指令) ===");
+        foreach (var node in hir)
+        {
+            var name = node.Type.ToString();
+            var extra = node switch
+            {
+                Call c     => $"{c.Name}({string.Join(", ", c.Args)})",
+                New n      => $"var{n.Var}={n.ConstValue?.ToString() ?? "?"}",
+                Assign a   => $"{a.Lhs} <- {a.Rhs}",
+                Branch b   => $"if t{b.Cond} then[{b.Then.Length}] else[{b.Else?.Length}]",
+                Return r   => $"t{r.Var}",
+                Import im  => $"[{string.Join(", ", im.Imported ?? [])}]",
+                _          => ""
+            };
+            Console.WriteLine($"  t{node.Id,-3} {name,-8} {extra}");
         }
     }
 
