@@ -92,7 +92,7 @@ public class Cli
 
         foreach (var err in result.Errors)
         {
-            int lineNum = FindErrorLine(err.Message, tree, lines);
+            int lineNum = err.Line > 0 ? err.Line : FindErrorLine(err.Message, tree, lines);
             Console.Write($"{Red}error{Reset}");
 
             if (lineNum > 0)
