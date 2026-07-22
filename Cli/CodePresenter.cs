@@ -123,4 +123,23 @@ class SymbolCollector : HksScriptBaseListener
             });
         }
     }
+
+    public override void EnterVarExpr(HksScriptParser.VarExprContext ctx)
+    {
+        var id = ctx.ID();
+        var name = id.GetText();
+        if (string.IsNullOrEmpty(name)) return;
+
+        var kind = checker.ResolveFuncType(name) != null ? "function" : "variable";
+        var type = kind == "function"
+            ? checker.ResolveFuncType(name) ?? "?"
+            : checker.ResolveType(name) ?? "?";
+
+        symbols.Add(new SymbolInfo
+        {
+            Name = name, Kind = kind, Type = type,
+            Line = id.Symbol.Line, Column = id.Symbol.Column,
+            Length = name.Length
+        });
+    }
 }

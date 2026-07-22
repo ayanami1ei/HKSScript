@@ -4,10 +4,15 @@
 def add(x: int, y: int) -> int:
     return x + y
 
+def sub(x:int, y:int)->int:
+    return x-y
+
+a=1
+
 # pipe链式调用
-result = 1
-=> add(2)
-=> add(3)
+result = a
+    => add(2)
+    => add(3)
 
 # 外部函数调用
 print(result)
