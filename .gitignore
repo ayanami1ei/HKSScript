@@ -8,4 +8,4 @@ Frontend/Grammar/*.interp
 Frontend/Grammar/*.tokens
 .DS_Store
 .VSCodeCounter/
-**/**.hks
+**/**.hksFrontend/vscode-hksscript/node_modules/
