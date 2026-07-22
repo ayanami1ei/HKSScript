@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <title>HKS脚本编译实现</title>
-    <style>
+<head><meta charset="UTF-8"><title>HKS脚本编译实现</title><style>
 body {
     font-family: "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
     line-height: 1.8;
@@ -27,10 +24,7 @@ code {
     border-radius: 3px;
     font-size: 0.9em;
 }
-pre code {
-    background: none;
-    padding: 0;
-}
+pre code { background: none; padding: 0; }
 table {
     border-collapse: collapse;
     width: 100%;
@@ -41,17 +35,10 @@ th, td {
     padding: 0.5em 1em;
     text-align: left;
 }
-th {
-    background: #f0f0f0;
-}
-h1, h2, h3 {
-    margin-top: 1.5em;
-    color: #111;
-}
-</style>
-</head>
-<body>
-<h1 id="hks">HKS脚本编译实现</h1>
+th { background: #f0f0f0; }
+h1, h2, h3 { margin-top: 1.5em; color: #111; }
+</style></head>
+<body><h1 id="hks">HKS脚本编译实现</h1>
 <h2 id="_1">整体流程</h2>
 <pre class="codehilite"><code>HksScript 源码
     │
@@ -503,7 +490,7 @@ VisitAddExpr(ctx) {
 }
 </code></pre>
 
-<hr>
+<hr />
 <h2 id="3">3. 类型推导</h2>
 <p>AST 搭建完了，但还不知道每个节点的<strong>类型</strong>。类型推导就是遍历 AST 给每个表达式算出类型，同时检查有没有类型错误。</p>
 <h3 id="_8">推导方式</h3>
@@ -554,7 +541,7 @@ b = unknown        # 错误：未定义的变量
 </tbody>
 </table>
 <p>后续步骤（Lowering、代码生成）都会查这个符号表。</p>
-<hr>
+<hr />
 <h2 id="4-hir">4. 生成 HIR（中间表示）</h2>
 <p>AST 包含了太多<strong>语法细节</strong>——比如 <code>query from ... with ...</code> 和 <code>query(...)</code> 在 AST 里是两种节点，但它们做的事情完全一样。代码生成时不想关心这些区别，所以需要 HIR（High-level Intermediate Representation，高层次中间表示）。</p>
 <h3 id="hir">HIR 是什么</h3>
@@ -625,6 +612,7 @@ t4 = Let(&quot;r&quot;, t3)
 <p>代码生成器只需要认识 <code>Filter</code> 指令，不需要关心用户当初用的是语法糖还是函数调用。</p>
 <h3 id="hir_2">HIR 指令定义</h3>
 <p>每条 HIR 指令都有一个唯一的 <code>Id</code> 编号，表示这条指令产生的结果。后续指令可以通过编号引用前面的结果。</p>
+<p>HIR 只保留最核心的控制流和运算，所有 IO、集合操作、打印等一律用函数调用表示。</p>
 <pre class="codehilite"><code class="language-csharp">// 程序 = 指令序列
 record ProgramHIR(List&lt;HIRInst&gt; Instructions);
 
@@ -634,54 +622,42 @@ abstract record HIRInst
     Id Dest;  // 结果编号，如 t0, t1, t2...
 }
 
-// Id 是整数别名，便于阅读
 typealias Id = int;  // t0 = 0, t1 = 1 ...
 
 // 常量：t0 = Const(42, int)
 record Const(Id Dest, Type Ty, object Value) : HIRInst();
 
-// 加载图像：t1 = Load(&quot;test.png&quot;)
-record Load(Id Dest, string Path) : HIRInst();
+// 二元运算：t2 = Add(t0, t1)
+// 包括算术（Add/Sub/Mul/Div）和比较（Lt/Gt/Eq...）
+record Binary(Id Dest, Type Ty, BinaryOp Op, Id Left, Id Right) : HIRInst();
 
-// 保存图像：t2 = Save(t1, &quot;out.png&quot;)
-record Save(Id Dest, Id Img, string Path) : HIRInst();
+enum BinaryOp { Add, Sub, Mul, Div, Lt, Gt, Eq, Neq, Le, Ge, And, Or }
+
+// 一元运算：t1 = Neg(t0)
+record Unary(Id Dest, Type Ty, UnaryOp Op, Id Operand) : HIRInst();
+
+enum UnaryOp { Neg, Not }
 
 // 函数调用：t3 = Call(&quot;find_circles&quot;, [t1])
+// 所有 IO（load/save/print/query/save）、集合运算（union/intersect/diff）
+// 都走 Call，不设专用指令
 record Call(Id Dest, Type RetTy, string Name, List&lt;Id&gt; Args) : HIRInst();
 
-// 条件筛选：t4 = Filter(t3, area &gt; 10)
-// condition 用表达式树表示，因为它是一个闭包
-record Filter(Id Dest, Id Source, Expr Condition) : HIRInst();
-
-// 分支：if (t0) { ... } else { ... }
-// block 是 HIR 指令列表的子集
-record Branch(Id Dest, Expr Condition, Block ThenBlock, Block? ElseBlock) : HIRInst();
-
-// 变量绑定：Let t5 = (&quot;r&quot;, t4)
-// 把值 t4 绑定到变量名 &quot;r&quot; 上
+// 变量绑定：t2 = Let(&quot;x&quot;, t0)
+// 把值 t0 绑定到变量名 &quot;x&quot;
 record Let(Id Dest, string Name, Id Source) : HIRInst();
 
-// 打印输出
-record Print(Id Dest, List&lt;Id&gt; Args) : HIRInst();
+// 分支：if (t0) { thenBlock } else { elseBlock }
+// Block 是 HIR 指令列表的子集
+record Branch(Id Dest, Expr Condition, Block ThenBlock, Block? ElseBlock) : HIRInst();
 
-// 函数返回：Return t0
-// 执行到此指令时，函数立即结束并返回 t0 的值
-// 返回值可以没有（void 函数），此时 Return 不带参数
+// 函数返回：Return(t0)
+// 函数立即结束并返回 t0 的值，无参 Return() 表示 void 返回
 record Return(Id? Value) : HIRInst();
 
-// --- 集合操作 ---
-
-// 范围：t5 = Range(t4)  →  0..len(t4)-1
-record Range(Id Dest, Id? Start, Id? End) : HIRInst();
-
-// 合并：t5 = Union(t3, t4)
-record Union(Id Dest, Id Left, Id Right) : HIRInst();
-
-// 交集：t5 = Intersect(t3, t4)
-record Intersect(Id Dest, Id Left, Id Right) : HIRInst();
-
-// 差集：t5 = Diff(t3, t4)  →  在 t3 不在 t4 的元素
-record Diff(Id Dest, Id Left, Id Right) : HIRInst();
+// 模块导入：Import(&quot;find_circle&quot;)
+// 加载并初始化模块，注册模块中的函数到符号表
+record Import(Id Dest, string Name) : HIRInst();
 </code></pre>
 
 <p>每条指令的 <code>Id</code> 在整个程序里递增。变量绑定 <code>Let</code> 的 <code>Dest</code> 是它自己的 Id，<code>Name</code> 是变量名，之后可以用变量名引用这个值。例如：</p>
@@ -702,11 +678,11 @@ t2 = Call(&quot;find_circles&quot;, t1)  // 参数 t1 → 实际用 t0 的值
 <tbody>
 <tr>
 <td><code>import a</code></td>
-<td><code>t0 = InitModule("a")</code> — 加载并初始化模块 a</td>
+<td><code>t0 = Import("a")</code> — 加载并初始化模块</td>
 </tr>
 <tr>
 <td><code>import a, b</code></td>
-<td><code>t0 = InitModule("a")</code> <code>t1 = InitModule("b")</code></td>
+<td><code>t0 = Import("a")</code> <code>t1 = Import("b")</code></td>
 </tr>
 <tr>
 <td><code>a = 1</code></td>
@@ -714,31 +690,27 @@ t2 = Call(&quot;find_circles&quot;, t1)  // 参数 t1 → 实际用 t0 的值
 </tr>
 <tr>
 <td><code>a = b + c</code></td>
-<td><code>t0 = Add(b, c)</code> <code>t1 = Let("a", t0)</code></td>
+<td><code>t0 = Binary(Add, b, c)</code> <code>t1 = Let("a", t0)</code></td>
 </tr>
 <tr>
-<td><code>load("x.png")</code></td>
-<td><code>t0 = Load("x.png")</code></td>
+<td><code>a + b</code></td>
+<td><code>t0 = Binary(Add, a, b)</code></td>
 </tr>
 <tr>
-<td><code>load("folder/*.png")</code></td>
-<td><code>t0 = LoadBatch("folder/*.png")</code> 返回 <code>Set&lt;Mat&gt;</code></td>
+<td><code>-x</code></td>
+<td><code>t0 = Unary(Neg, x)</code></td>
+</tr>
+<tr>
+<td><code>not c</code></td>
+<td><code>t0 = Unary(Not, c)</code></td>
 </tr>
 <tr>
 <td><code>fn(a, b)</code></td>
-<td><code>t0 = Call(fn, a, b)</code></td>
-</tr>
-<tr>
-<td><code>query from x with cond</code></td>
-<td><code>t0 = Filter(x, cond)</code></td>
-</tr>
-<tr>
-<td><code>query(x, cond)</code></td>
-<td><code>t0 = Filter(x, cond)</code></td>
+<td><code>t0 = Call(fn, [a, b])</code></td>
 </tr>
 <tr>
 <td><code>a =&gt; f()</code></td>
-<td><code>t0 = f(a)</code> — pipe 结果自动填入 f 的第一个参数</td>
+<td><code>t0 = Call(f, [a])</code> — pipe 结果填入第一个参数</td>
 </tr>
 <tr>
 <td><code>if c: ... else: ...</code></td>
@@ -746,43 +718,62 @@ t2 = Call(&quot;find_circles&quot;, t1)  // 参数 t1 → 实际用 t0 的值
 </tr>
 <tr>
 <td><code>return x</code></td>
-<td><code>t0 = Return(x)</code> — 函数立即结束，返回 x 的值</td>
+<td><code>t0 = Return(x)</code></td>
 </tr>
 <tr>
 <td><code>return</code></td>
-<td><code>t0 = Return()</code> — void 函数，无返回值</td>
+<td><code>t0 = Return()</code></td>
+</tr>
+</tbody>
+</table>
+<p>所有 IO 操作、集合操作、query、import 等一律走 <code>Call</code>：</p>
+<table>
+<thead>
+<tr>
+<th>语法</th>
+<th>生成的 HIR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>load("x.png")</code></td>
+<td><code>t0 = Call(load, ["x.png"])</code></td>
 </tr>
 <tr>
-<td><code>range(col)</code></td>
-<td><code>t0 = Range(null, col)</code>  →  隐式 <code>0..len(col)-1</code></td>
+<td><code>save(img, p)</code></td>
+<td><code>t0 = Call(save, [img, p])</code></td>
 </tr>
 <tr>
-<td><code>a \| b</code> （集合）</td>
-<td><code>t0 = Union(a, b)</code></td>
+<td><code>print(x)</code></td>
+<td><code>t0 = Call(print, [x])</code></td>
 </tr>
 <tr>
-<td><code>a &amp; b</code> （集合）</td>
-<td><code>t0 = Intersect(a, b)</code></td>
+<td><code>query from x with c</code></td>
+<td><code>t0 = Call(query, [x, c])</code></td>
 </tr>
 <tr>
-<td><code>a - b</code> （集合）</td>
-<td><code>t0 = Diff(a, b)</code></td>
+<td><code>query(x, c)</code></td>
+<td><code>t0 = Call(query, [x, c])</code></td>
 </tr>
 <tr>
-<td><code>a + b</code> （数值）</td>
-<td><code>t0 = Add(a, b)</code></td>
+<td><code>range(x)</code></td>
+<td><code>t0 = Call(range, [x])</code></td>
 </tr>
 <tr>
-<td><code>union(a, b)</code></td>
-<td><code>t0 = Union(a, b)</code> — 函数调用写法，同样保留</td>
+<td><code>union(a, b)</code> / <code>a \| b</code></td>
+<td><code>t0 = Call(union, [a, b])</code></td>
 </tr>
 <tr>
-<td><code>intersect(a, b)</code></td>
-<td><code>t0 = Intersect(a, b)</code></td>
+<td><code>intersect(a, b)</code> / <code>a &amp; b</code></td>
+<td><code>t0 = Call(intersect, [a, b])</code></td>
 </tr>
 <tr>
-<td><code>diff(a, b)</code></td>
-<td><code>t0 = Diff(a, b)</code></td>
+<td><code>diff(a, b)</code> / <code>a - b</code></td>
+<td><code>t0 = Call(diff, [a, b])</code></td>
+</tr>
+<tr>
+<td><code>sql(conn, stmt)</code></td>
+<td><code>t0 = Call(sql, [conn, stmt])</code></td>
 </tr>
 </tbody>
 </table>
@@ -818,7 +809,7 @@ query        : Pack&lt;T&gt;, Expr → Pack&lt;T&gt;
 </code></pre>
 
 <p>并行策略由执行器/代码生成器自行决定，不作为 HIR 语义的一部分（后续可加注解机制）。</p>
-<hr>
+<hr />
 <h2 id="5">5. 解释执行</h2>
 <p>HIR 不需要编译成机器码，可以直接用一个循环逐条执行。</p>
 <h3 id="_11">怎么做</h3>
@@ -888,7 +879,7 @@ case OpKind.Return:
 
 <p>在 HIR 解释器的循环中，<code>Return</code> 不做值传递，只设置标记。上层函数执行器检查标记后停止执行。</p>
 <p>这和当前 <code>Evaluator.cs</code> 做的事情本质上一样，只是现在的 Evaluator 是递归走 AST，改成走 HIR 列表更简单。</p>
-<hr>
+<hr />
 <h2 id="6-hir-c-c">6. 代码生成（HIR → C++ / C#）</h2>
 <h3 id="_12">基本思路</h3>
 <p>遍历 HIR 指令列表，每条指令对应生成几行目标语言代码。</p>
@@ -966,7 +957,7 @@ var r = t4;
 <li>不需要考虑上下文，因为上下文已经被 HIR 扁平化了</li>
 <li>指令之间的数据依赖通过 <code>t0</code>、<code>t1</code> 这样的临时变量名传递</li>
 </ul>
-<hr>
+<hr />
 <h2 id="7-todo">7. 优化（TODO — 后续版本实现）</h2>
 <blockquote>
 <p><strong>当前状态</strong>：以下优化策略是设计规划，短期内不会实现。
@@ -1085,7 +1076,7 @@ auto r = filter(circles, [](auto&amp; c) { return c.area &gt; 10; });
          只看引用计数              还要看类型语义
 </code></pre>
 
-<hr>
+<hr />
 <h2 id="_19">总结</h2>
 <pre class="codehilite"><code>源码 → Token → AST → [类型推导] → HIR → 目标代码
 
@@ -1093,6 +1084,5 @@ auto r = filter(circles, [](auto&amp; c) { return c.area &gt; 10; });
 生产期：HIR → C++/C# 代码编译成 native（极致性能）
 </code></pre>
 
-<p>核心思路：<strong>语法写的多样性在 AST 里保留，在往 HIR 转化时统一，代码生成器只认识 HIR，不用管源语法的花样。</strong></p>
-</body>
+<p>核心思路：<strong>语法写的多样性在 AST 里保留，在往 HIR 转化时统一，代码生成器只认识 HIR，不用管源语法的花样。</strong></p></body>
 </html>

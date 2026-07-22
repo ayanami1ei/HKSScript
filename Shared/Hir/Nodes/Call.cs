@@ -2,16 +2,17 @@ namespace HksScript.Hir;
 
 public record class Call : HirBasicNode
 {
-    private int blockId;
+    private string name;
+    private int[] args;
 
-    public Call(int id, int block)
+    public Call(int id, string name, int[] args)
     {
         type = HirType.Call;
         this.id = id;
-        this.blockId = block;
+        this.name = name;
+        this.args = args;
     }
 
-    public int Block{
-        set{ blockId = value; }
-    }
+    public string Name => name;
+    public int[] Args => args;
 }

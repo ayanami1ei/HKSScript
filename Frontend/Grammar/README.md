@@ -43,11 +43,11 @@ else:
 ### 4. 函数
 
 ```python
-# 定义时用 -> 标注返回值类型，不写则无返回值
-def find_circles(img) -> Set<Circle>:
+# 参数必须标注类型，返回值类型可省略（省略则无返回值）
+def find_circles(img: Mat) -> Set<Circle>:
     return algo_run(img)
 
-def log(msg):
+def log(msg: string):
     print(msg)
 
 res = find_circles(img)  # res 类型为 Set<Circle>

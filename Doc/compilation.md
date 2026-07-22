@@ -526,75 +526,69 @@ t4 = Let("r", t3)
 
 每条 HIR 指令都有一个唯一的 `Id` 编号，表示这条指令产生的结果。后续指令可以通过编号引用前面的结果。
 
+HIR 只保留最核心的控制流和运算，所有 IO、集合操作、打印等一律用函数调用表示。
+
 ```csharp
 // 程序 = 指令序列
-record ProgramHIR(List<HIRInst> Instructions);
+record ProgramHIR(List<HirBasicNode> Instructions);
 
 // 指令基类
-abstract record HIRInst
+abstract record class HirBasicNode
 {
-    Id Dest;  // 结果编号，如 t0, t1, t2...
+    HirType Type;  // 指令类型
+    int Id;        // 结果编号 t0, t1...
 }
-
-// Id 是整数别名，便于阅读
-typealias Id = int;  // t0 = 0, t1 = 1 ...
-
-// 常量：t0 = Const(42, int)
-record Const(Id Dest, Type Ty, object Value) : HIRInst();
-
-// 加载图像：t1 = Load("test.png")
-record Load(Id Dest, string Path) : HIRInst();
-
-// 保存图像：t2 = Save(t1, "out.png")
-record Save(Id Dest, Id Img, string Path) : HIRInst();
-
-// 函数调用：t3 = Call("find_circles", [t1])
-record Call(Id Dest, Type RetTy, string Name, List<Id> Args) : HIRInst();
-
-// 条件筛选：t4 = Filter(t3, area > 10)
-// condition 用表达式树表示，因为它是一个闭包
-record Filter(Id Dest, Id Source, Expr Condition) : HIRInst();
-
-// 分支：if (t0) { ... } else { ... }
-// block 是 HIR 指令列表的子集
-record Branch(Id Dest, Expr Condition, Block ThenBlock, Block? ElseBlock) : HIRInst();
-
-// 变量绑定：Let t5 = ("r", t4)
-// 把值 t4 绑定到变量名 "r" 上
-record Let(Id Dest, string Name, Id Source) : HIRInst();
-
-// 打印输出
-record Print(Id Dest, List<Id> Args) : HIRInst();
-
-// 函数返回：Return t0
-// 执行到此指令时，函数立即结束并返回 t0 的值
-// 返回值可以没有（void 函数），此时 Return 不带参数
-record Return(Id? Value) : HIRInst();
-
-// --- 集合操作 ---
-
-// 范围：t5 = Range(t4)  →  0..len(t4)-1
-record Range(Id Dest, Id? Start, Id? End) : HIRInst();
-
-// 合并：t5 = Union(t3, t4)
-record Union(Id Dest, Id Left, Id Right) : HIRInst();
-
-// 交集：t5 = Intersect(t3, t4)
-record Intersect(Id Dest, Id Left, Id Right) : HIRInst();
-
-// 差集：t5 = Diff(t3, t4)  →  在 t3 不在 t4 的元素
-record Diff(Id Dest, Id Left, Id Right) : HIRInst();
-
-
 ```
 
-每条指令的 `Id` 在整个程序里递增。变量绑定 `Let` 的 `Dest` 是它自己的 Id，`Name` 是变量名，之后可以用变量名引用这个值。例如：
+HirType 只分 6 种：
+
+```csharp
+public enum HirType
+{
+    Call,           // 函数调用（涵盖所有运算、IO、集合操作）
+    Return,         // 函数返回
+    Branch,         // 条件分支
+
+    Assign,         // 变量赋值
+    New,            // 声明变量
+
+    Import,         // 导入模块
+}
+```
+
+每个 HIR 节点是一个独立的 record class，继承 `HirBasicNode`：
+
+```csharp
+// 函数调用：Call(id, "find_circles", [argId0, argId1])
+// 所有运算（加减乘除/比较/逻辑）、IO、集合操作都统一走 Call
+record class Call(int Id, string Name, int[] Args) : HirBasicNode;
+
+// 变量赋值：Assign(id, rhsId, lhsId)
+record class Assign(int Id, int Rhs, int Lhs) : HirBasicNode;
+
+// 声明变量：New(id, varId, "Mat")
+record class New(int Id, int Var, string VarType) : HirBasicNode;
+
+// 条件分支：Branch(condId, thenBlock, elseBlock?)
+// then 和 else 是嵌套的 HIR 指令数组，执行完后自动回到外层
+record class Branch(int Id, int Cond, HirBasicNode[] Then, HirBasicNode[]? Else = null) : HirBasicNode;
+
+// 函数返回：Return(id, blockId, varId)
+record class Return(int Id, int Block, int Var) : HirBasicNode;
+
+// 模块导入：Import(id, ["find_circle"])
+record class Import(int Id, string[] Imported) : HirBasicNode;
+```
+
+算数、比较、逻辑运算不设独立 HIR 指令，转为内置函数调用：
 
 ```
-t0 = Load("test.png")       // Dest=0
-t1 = Let("img", t0)         // "img" → t0, Dest=1
-t2 = Call("find_circles", t1)  // 参数 t1 → 实际用 t0 的值
+a + b     →  Call("__add", [aId, bId])
+a > 5     →  Call("__gt", [aId, New(5)])
+not cond  →  Call("__not", [condId])
 ```
+
+这些 `__add`、`__gt`、`__not` 函数在启动时注册到 FunctionTable，与其他函数无区别。
 
 这里的 `Let("img", t0)` 意思是给 t0 的结果起个别名叫 "img"。之后代码里提到 `img` 就会查到实际指向 t0。
 
@@ -602,27 +596,37 @@ t2 = Call("find_circles", t1)  // 参数 t1 → 实际用 t0 的值
 
 | AST 节点 | 生成的 HIR |
 |----------|-----------|
-| `import a` | `t0 = InitModule("a")` — 加载并初始化模块 a |
-| `import a, b` | `t0 = InitModule("a")` `t1 = InitModule("b")` |
-| `a = 1` | `t0 = Const(1, int)` `t1 = Let("a", t0)` |
-| `a = b + c` | `t0 = Add(b, c)` `t1 = Let("a", t0)` |
-| `load("x.png")` | `t0 = Load("x.png")` |
-| `load("folder/*.png")` | `t0 = LoadBatch("folder/*.png")` 返回 `Set<Mat>` |
-| `fn(a, b)` | `t0 = Call(fn, a, b)` |
-| `query from x with cond` | `t0 = Filter(x, cond)` |
-| `query(x, cond)` | `t0 = Filter(x, cond)` |
-| `a => f()` | `t0 = f(a)` — pipe 结果自动填入 f 的第一个参数 |
-| `if c: ... else: ...` | `t0 = Branch(c, ...block1..., ...block2...)` |
-| `return x` | `t0 = Return(x)` — 函数立即结束，返回 x 的值 |
-| `return` | `t0 = Return()` — void 函数，无返回值 |
-| `range(col)` | `t0 = Range(null, col)`  →  隐式 `0..len(col)-1` |
-| `a \| b` （集合） | `t0 = Union(a, b)` |
-| `a & b` （集合） | `t0 = Intersect(a, b)` |
-| `a - b` （集合） | `t0 = Diff(a, b)` |
-| `a + b` （数值） | `t0 = Add(a, b)` |
-| `union(a, b)` | `t0 = Union(a, b)` — 函数调用写法，同样保留 |
-| `intersect(a, b)` | `t0 = Intersect(a, b)` |
-| `diff(a, b)` | `t0 = Diff(a, b)` |
+| `import a` | `t0 = Import("a")` |
+| `import a, b` | `t0 = Import("a")` `t1 = Import("b")` |
+| `a = 1` | `t0 = New("a")` `t1 = Assign(t0)` |
+| `a = b + c` | `t0 = Call("__add", [bId, cId])` `t1 = Assign(t0)` |
+| `not cond` | `t0 = Call("__not", [condId])` |
+| `fn(a, b)` | `t0 = Call("fn", [aId, bId])` |
+| `a => f()` | `t0 = Call("f", [aId])` |
+| `if cond: ... else: ...` | `t0 = Branch(condId, [...]thenBlock...[], [...]elseBlock...[])` |
+| `return x` | `t0 = Return(blockId, xId)` |
+| `return` | `t0 = Return(blockId)` |
+
+所有 IO 操作、集合操作、query、import 等一律走 `Call`：
+
+| 语法 | 生成的 HIR |
+|------|-----------|
+| `a + b` | `t0 = Call("__add", [a, b])` |
+| `a - b` | `t0 = Call("__sub", [a, b])` |
+| `a * b` | `t0 = Call("__mul", [a, b])` |
+| `a / b` | `t0 = Call("__div", [a, b])` |
+| `a > b` | `t0 = Call("__gt", [a, b])` |
+| `a and b` | `t0 = Call("__and", [a, b])` |
+| `not cond` | `t0 = Call("__not", [cond])` |
+| `a \| b` （集合） | `t0 = Call("__union", [a, b])` |
+| `a & b` （集合） | `t0 = Call("__intersect", [a, b])` |
+| `a - b` （集合） | `t0 = Call("__diff", [a, b])` |
+| `load("x.png")` | `t0 = Call("load", ["x.png"])` |
+| `save(img, p)` | `t0 = Call("save", [img, p])` |
+| `print(x)` | `t0 = Call("print", [x])` |
+| `query from x with c` | `t0 = Call("query", [x, c])` |
+| `range(x)` | `t0 = Call("range", [x])` |
+| `sql(conn, stmt)` | `t0 = Call("sql", [conn, stmt])` |
 
 每条 HIR 指令的记录格式：
 
@@ -667,43 +671,184 @@ load("batch/*.png")     → Many<Mat>
 
 并行策略由执行器/代码生成器自行决定，不作为 HIR 语义的一部分（后续可加注解机制）。
 
+### 类型与运行时
+
+类型推导得到的类型字符串在编译期和运行时各有用处：
+
+**编译期** — 类型推导用类型字符串做安全检查：
+
+```
+# 脚本层
+def find_circles(img: Mat) -> Set<Circle>
+
+find_circles("hello")  ← 类型推导报错，参数需要 Mat，实际是 string
+                       ← 不生成 HIR，不执行
+```
+
+编译通过就保证了：运行时传给每个函数的 `object?` 一定是正确的底层类型。
+
+**解释器** — 只传 `object?`，不碰具体类型：
+
+```
+脚本函数的参数 img: Mat  → 类型推导检查通过
+                          → 运行时 values[imgId] 一定存的是 Mat 对象
+                          → 解释器不管它，只做 object? → object? 转发
+
+NativeFunction("find_circles")  → 接收 object?[]
+                                 → 内部 (Mat)args[0] 强转
+                                 → 这是算法库的人写的代码，他知道类型
+```
+
+调用链：
+
+```
+脚本: find_circles(img)
+  → HIR: Call("find_circles", [imgId])
+    → 解释器: args = [values[imgId]]         ← object?[]
+      → NativeFunction.Impl(args):
+            Mat img = (Mat)args[0]!;          ← 算法库的人写的强转
+            return FindCirclesNative(img);    ← 调用 C++ 算法
+```
+
+**解释器全程不需要做 `(Mat)` 这种强转。** 它只负责把 `object?` 从一个指令的结果传给下一个指令的参数。`.NET` 的 `object?` 保留对象的真实类型，`(Mat)args[0]` 在 NativeFunction 内部由 CLR 完成类型检查，不需要反射。
+
+**类型字符串的三个用途总结：**
+
+| 阶段 | 作用 | 方式 |
+|------|------|------|
+| 类型推导 | 检查参数/返回值是否匹配，报错 | 字符串比较 `"Mat" != "string"` |
+| 解释执行 | 不需要类型信息 | 只传 `object?` |
+| C++ 代码生成 | 生成类型声明 | 字符串直接嵌入 C++ |
+
 ---
 
 ## 5. 解释执行
 
 HIR 不需要编译成机器码，可以直接用一个循环逐条执行。
 
-### 怎么做
+### 函数查找
+
+Call 指令需要一个函数查找系统。不直接用 C# 反射，而是自定义注册表：
 
 ```csharp
-Dictionary<Id, object?> values = new();
+// 函数统一抽象
+abstract record Function;
 
-foreach (var inst in program)
+// 原生函数：C# 直接实现，或通过 P/Invoke 调 C++ 算法库
+record NativeFunction(string Name, Func<object?[], object?> Impl) : Function;
+
+// 脚本函数：用户用 def 定义的
+record ScriptFunction(FuncDef Def, Dictionary<string, object?> Closure) : Function;
+
+// 函数注册表
+class FunctionTable
 {
-    switch (inst.Op)
+    Dictionary<string, Function> _funcs = new();
+
+    public void Register(string name, Function func)
+        => _funcs[name] = func;
+
+    public Function? Find(string name)
+        => _funcs.TryGetValue(name, out var f) ? f : null;
+
+    // 内置函数注册
+    public void RegisterBuiltins()
     {
-        case OpKind.Load:
-            values[inst.Dest] = Mat.FromFile((string)inst.Args[0]);
-            break;
+        Register("load",  new NativeFunction("load",  args => Mat.FromFile((string)args[0]!)));
+        Register("save",  new NativeFunction("save",  args => { /* 保存文件 */ return null; }));
+        Register("print", new NativeFunction("print", args => { Console.WriteLine(args[0]); return null; }));
+        Register("query", new NativeFunction("query", args => { /* 筛选集合 */ return null; }));
+        Register("union", new NativeFunction("union", args => { /* 并集 */ return null; }));
+        // ...
+    }
 
-        case OpKind.Call:
-            var func = LookupFunction((string)inst.Args[0]);
-            var args = inst.Args.Skip(1).Select(a => values[(Id)a]);
-            values[inst.Dest] = func(args);
-            break;
+    // import 时注册模块函数
+    public void ImportModule(string name)
+    {
+        // 扫描 plugins/ 目录加载算法模块，注册其导出函数
+    }
+}
+```
 
-        case OpKind.Filter:
-            var list = values[(Id)inst.Args[0]] as Set<Circle>;
-            var pred = BuildPredicate(inst.Condition);
-            values[inst.Dest] = list.Where(c => pred(c)).ToList();
-            break;
+调用时不使用反射：
 
-        case OpKind.Let:
-            var varName = (string)inst.Args[0];
-            var val = values[(Id)inst.Args[1]];
-            env[varName] = val;
-            values[inst.Dest] = val;
+```csharp
+case HirType.Call:
+    var fn = funcTable.Find(inst.Name);
+    switch (fn)
+    {
+        case NativeFunction nf:
+            values[inst.Dest] = nf.Impl(resolveArgs(inst.Args));
             break;
+        case ScriptFunction sf:
+            values[inst.Dest] = executeScriptFunc(sf, resolveArgs(inst.Args));
+            break;
+    }
+    break;
+```
+
+这样所有函数（内置、C++算法、脚本定义）都通过同一个注册表查找，没有反射开销。
+
+### 怎么做
+
+解释器按 HirType 分发，每类节点对应一个执行分支：
+
+```csharp
+// 全局值表：Id → 运行时值
+Dictionary<int, object?> values = new();
+// 变量环境：变量名 → Id
+Dictionary<string, int> env = new();
+
+void Execute(HirBasicNode[] program)
+{
+    foreach (var node in program)
+    {
+        switch (node.Type)
+        {
+            case HirType.Call:
+                var fn = (Call)node;
+                var func = funcTable.Find(fn.Name);
+                var args = fn.Args.Select(a => values[a]).ToArray();
+                values[fn.Id] = func switch
+                {
+                    NativeFunction nf => nf.Impl(args),
+                    ScriptFunction sf => ExecuteScriptFunc(sf, args),
+                    _ => throw new Exception($"Unknown function: {fn.Name}")
+                };
+                break;
+
+            case HirType.New:
+                var n = (New)node;
+                env[n.Var] = n.Id;
+                values[n.Id] = null;  // 占位，后续 Assign 填值
+                break;
+
+            case HirType.Assign:
+                var a = (Assign)node;
+                values[a.Lhs] = values[a.Rhs];
+                break;
+
+            case HirType.Branch:
+                var br = (Branch)node;
+                if ((bool)values[br.Cond]!)
+                    Execute(br.Then);
+                else if (br.Else != null)
+                    Execute(br.Else);
+                // 执行完后自动回到外层循环继续下一条指令
+                break;
+
+            case HirType.Return:
+                var ret = (Return)node;
+                _returned = true;
+                _returnValue = values[ret.Var];
+                break;
+
+            case HirType.Import:
+                var imp = (Import)node;
+                foreach (var mod in imp.Imported)
+                    funcTable.ImportModule(mod);
+                break;
+        }
     }
 }
 ```
@@ -737,9 +882,10 @@ void ExecuteFunction(FuncDef func, object?[] args)
 }
 
 // Return 指令的执行：
-case OpKind.Return:
+case HirType.Return:
+    var ret = (Return)node;
     _returned = true;
-    _returnValue = inst.Value != null ? values[inst.Value] : null;
+    _returnValue = values[ret.Var];
     break;
 ```
 
