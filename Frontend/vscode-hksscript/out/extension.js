@@ -108,6 +108,7 @@ function activate(context) {
         editor.setDecorations(nuDec, nuR);
     }
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(update), vscode.workspace.onDidSaveTextDocument(doc => {
+        console.log('HKS: onSave lang=' + doc.languageId);
         if (doc.languageId === 'hkscript') {
             console.log('HKS: saved');
             runDiagnose(doc.uri.fsPath, diagnostic);

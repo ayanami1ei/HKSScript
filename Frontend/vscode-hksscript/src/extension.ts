@@ -107,6 +107,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(update),
         vscode.workspace.onDidSaveTextDocument(doc => {
+            console.log('HKS: onSave lang=' + doc.languageId);
             if (doc.languageId === 'hkscript') {
                 console.log('HKS: saved');
                 runDiagnose(doc.uri.fsPath, diagnostic);
