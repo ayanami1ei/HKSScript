@@ -3,15 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 const vscode = require("vscode");
 // 模块作用域，不会被GC
-const kwColor = { color: '#cba6f7', fontWeight: 'bold' };
-const tpColor = { color: '#a6e3a1' };
-const fnColor = { color: '#f9e2af' };
-const coColor = { color: '#6c7086', fontStyle: 'italic' };
-const stColor = { color: '#89b4fa' };
-const nuColor = { color: '#fab387' };
+const kwColor = { color: '#b784e0', fontWeight: 'bold' };
+const tpColor = { color: '#7ecf7e' };
+const fnColor = { color: '#e8c86a' };
+const vaColor = { color: '#7ab8e0' };
+const coColor = { color: '#5a5e6e', fontStyle: 'italic' };
+const stColor = { color: '#6aa8e0' };
+const nuColor = { color: '#e09860' };
 let kwDec;
 let tpDec;
 let fnDec;
+let vaDec;
 let coDec;
 let stDec;
 let nuDec;
@@ -20,10 +22,11 @@ function activate(context) {
     kwDec = vscode.window.createTextEditorDecorationType(kwColor);
     tpDec = vscode.window.createTextEditorDecorationType(tpColor);
     fnDec = vscode.window.createTextEditorDecorationType(fnColor);
+    vaDec = vscode.window.createTextEditorDecorationType(vaColor);
     coDec = vscode.window.createTextEditorDecorationType(coColor);
     stDec = vscode.window.createTextEditorDecorationType(stColor);
     nuDec = vscode.window.createTextEditorDecorationType(nuColor);
-    context.subscriptions.push(kwDec, tpDec, fnDec, coDec, stDec, nuDec);
+    context.subscriptions.push(kwDec, tpDec, fnDec, coDec, stDec, nuDec, vaDec);
     const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
     item.text = 'HKS ✓';
     item.show();
@@ -37,6 +40,7 @@ function activate(context) {
         const kwR = [];
         const tpR = [];
         const fnR = [];
+        const vaR = [];
         const coR = [];
         const stR = [];
         const nuR = [];
@@ -72,9 +76,26 @@ function activate(context) {
         const callRe = /\b([a-zA-Z_]\w*)\s*\(/g;
         while ((m = callRe.exec(text)) !== null)
             fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[1].length)));
+        // variables: standalone words not matched above
+        const varRe = /\b[a-zA-Z_]\w*\b/g;
+        const kws = new Set(['import', 'def', 'if', 'elif', 'else', 'return', 'query', 'from', 'with', 'and', 'or', 'not', 'true', 'false',
+            'int', 'float', 'string', 'bool', 'Mat', 'Set', 'Circle', 'Range', 'void',
+            'load', 'save', 'print', 'len', 'range']);
+        while ((m = varRe.exec(text)) !== null) {
+            const w = m[0];
+            if (kws.has(w))
+                continue;
+            // check if this position is already colored as function
+            const pos = m.index;
+            const after = text.substring(pos + w.length).trimStart();
+            if (after.startsWith('('))
+                continue; // function call
+            vaR.push(new vscode.Range(editor.document.positionAt(pos), editor.document.positionAt(pos + w.length)));
+        }
         editor.setDecorations(kwDec, kwR);
         editor.setDecorations(tpDec, tpR);
         editor.setDecorations(fnDec, fnR);
+        editor.setDecorations(vaDec, vaR);
         editor.setDecorations(coDec, coR);
         editor.setDecorations(stDec, stR);
         editor.setDecorations(nuDec, nuR);
