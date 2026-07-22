@@ -64,6 +64,6 @@ function activate(context) {
         if (vscode.window.activeTextEditor?.document === e.document)
             update(vscode.window.activeTextEditor);
     }));
-    setTimeout(() => update(vscode.window.activeTextEditor), 1000);
+    setTimeout(() => update(vscode.window.activeTextEditor), 100);
 }
 //# sourceMappingURL=extension.js.map

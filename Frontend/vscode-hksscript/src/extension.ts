@@ -80,5 +80,5 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    setTimeout(() => update(vscode.window.activeTextEditor), 1000);
+    setTimeout(() => update(vscode.window.activeTextEditor), 100);
 }
