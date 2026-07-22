@@ -66,6 +66,13 @@
           ]
         }
       }
+    ],
+    "themes": [
+      {
+        "label": "HKS Script",
+        "uiTheme": "vs-dark",
+        "path": "./themes/hkscript-color-theme.json"
+      }
     ]
   },
   "dependencies": {
