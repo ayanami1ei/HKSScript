@@ -53,6 +53,9 @@ public class TypeChecker
         return null;
     }
 
+    private static int Line(Expr? e) => e?.Position?.Line ?? 0;
+    private static int Line(Stmt? s) => s?.Position?.Line ?? 0;
+
     private void RegisterBuiltins()
     {
         RegisterFunc("load",       new[] { "string" },             "Mat");
@@ -196,7 +199,7 @@ public class TypeChecker
     {
         var resolved = symbols.Resolve(var.Name);
         if (resolved == null)
-            result.Error($"未定义的变量: {var.Name}");
+            result.Error($"未定义的变量: {var.Name}", Line(var));
         return resolved;
     }
 
@@ -204,7 +207,7 @@ public class TypeChecker
     {
         if (!functions.TryGetValue(call.Name, out var sigs))
         {
-            result.Error($"未定义的函数: {call.Name}");
+            result.Error($"未定义的函数: {call.Name}", Line(call));
             return null;
         }
 
@@ -222,7 +225,7 @@ public class TypeChecker
             var expected = sigs[0].ParamTypes.Length == argNames.Length
                 ? string.Join(", ", sigs[0].ParamTypes)
                 : $"{sigs[0].ParamTypes.Length}个参数";
-            result.Error($"函数 {call.Name} 参数不匹配: 需要 ({expected}), 实际 ({string.Join(", ", argNames)})");
+            result.Error($"函数 {call.Name} 参数不匹配: 需要 ({expected}), 实际 ({string.Join(", ", argNames)})", Line(call));
             return null;
         }
 
@@ -253,7 +256,7 @@ public class TypeChecker
         if (IsComparison(bin.Op))
             return new TypeRef("bool");
 
-        result.Error($"类型不匹配: {left.Name} {bin.Op} {right.Name}");
+        result.Error($"类型不匹配: {left.Name} {bin.Op} {right.Name}", Line(bin));
         return null;
     }
 
@@ -261,7 +264,7 @@ public class TypeChecker
     {
         var op = InferExpr(unary.Operand);
         if (op != null && op.Name != "bool")
-            result.Error($"not 需要 bool 类型，实际 {op.Name}");
+            result.Error($"not 需要 bool 类型，实际 {op.Name}", Line(unary));
         return new TypeRef("bool");
     }
 
@@ -283,7 +286,7 @@ public class TypeChecker
 
             if (!functions.TryGetValue(call.Name, out var sigs))
             {
-                result.Error($"未定义的函数: {call.Name}");
+                result.Error($"未定义的函数: {call.Name}", Line(call));
                 return null;
             }
 
@@ -294,7 +297,7 @@ public class TypeChecker
 
             if (matched == null)
             {
-                result.Error($"pipe {call.Name} 参数不匹配: 需要 ({string.Join(", ", sigs[0].ParamTypes)}), 实际 ({string.Join(", ", argNames)})");
+                result.Error($"pipe {call.Name} 参数不匹配: 需要 ({string.Join(", ", sigs[0].ParamTypes)}), 实际 ({string.Join(", ", argNames)})", Line(pipe));
                 return null;
             }
 

@@ -1,8 +1,13 @@
 namespace HksScript.Ast;
 
+public record SourcePosition(int Line, int Column);
+
 // ─── 语句 ───
 
-public abstract record Stmt();
+public abstract record Stmt
+{
+    public SourcePosition? Position { get; init; }
+}
 
 public record Program(List<Stmt> Statements);
 
@@ -26,7 +31,10 @@ public record ExprStmt(Expr Value) : Stmt();
 
 // ─── 表达式 ───
 
-public abstract record Expr();
+public abstract record Expr
+{
+    public SourcePosition? Position { get; init; }
+}
 
 public record Literal(object Value) : Expr();
 
