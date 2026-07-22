@@ -3,6 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 const vscode = require("vscode");
 // 模块作用域，不会被GC
+const kwColor = { color: '#cba6f7', fontWeight: 'bold' };
+const tpColor = { color: '#a6e3a1' };
+const fnColor = { color: '#f9e2af' };
+const coColor = { color: '#6c7086', fontStyle: 'italic' };
+const stColor = { color: '#89b4fa' };
+const nuColor = { color: '#fab387' };
 let kwDec;
 let tpDec;
 let fnDec;
@@ -11,13 +17,12 @@ let stDec;
 let nuDec;
 function activate(context) {
     console.log('HKS: activate');
-    // 创建装饰器
-    kwDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(203,166,247,0.3)' });
-    tpDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(166,227,161,0.3)' });
-    fnDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(249,226,175,0.3)' });
-    coDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(108,112,134,0.3)' });
-    stDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(137,180,250,0.3)' });
-    nuDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(250,179,135,0.3)' });
+    kwDec = vscode.window.createTextEditorDecorationType(kwColor);
+    tpDec = vscode.window.createTextEditorDecorationType(tpColor);
+    fnDec = vscode.window.createTextEditorDecorationType(fnColor);
+    coDec = vscode.window.createTextEditorDecorationType(coColor);
+    stDec = vscode.window.createTextEditorDecorationType(stColor);
+    nuDec = vscode.window.createTextEditorDecorationType(nuColor);
     context.subscriptions.push(kwDec, tpDec, fnDec, coDec, stDec, nuDec);
     const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
     item.text = 'HKS ✓';
