@@ -12,3 +12,4 @@ Frontend/Grammar/*.tokens
 Frontend/vscode-hksscript/*.vsix
 _pkg/
 release/
+*.png
