@@ -4,9 +4,11 @@
   "description": "HKS Script language support: syntax highlighting and basic syntax checking",
   "version": "0.1.0",
   "publisher": "hksscript",
-  "engines": {
-    "vscode": "^1.80.0"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ayanami1ei/HKSScript.git"
   },
+  "engines": { "vscode": "^1.80.0" },
   "categories": [
     "Programming Languages",
     "Linters"

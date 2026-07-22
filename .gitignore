@@ -9,3 +9,4 @@ Frontend/Grammar/*.tokens
 .DS_Store
 .VSCodeCounter/
 **/**.hksFrontend/vscode-hksscript/node_modules/
+Frontend/vscode-hksscript/*.vsix
