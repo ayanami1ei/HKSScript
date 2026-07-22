@@ -63,10 +63,10 @@ public static class BuiltinRegistry
 
         // 集合
         table.Register("__union", new ExternalFunction("__union",
-            args => args[0]));  // 简化
+            args => ((Many<object>)args[0]!).Union((Many<object>)args[1]!)));
         table.Register("__intersect", new ExternalFunction("__intersect",
-            args => args[0]));
+            args => ((Many<object>)args[0]!).Intersect((Many<object>)args[1]!)));
         table.Register("__diff", new ExternalFunction("__diff",
-            args => args[0]));
+            args => ((Many<object>)args[0]!).Diff((Many<object>)args[1]!)));
     }
 }
