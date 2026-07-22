@@ -124,9 +124,12 @@ function activate(context) {
     // ─── 类型提示 ───
     context.subscriptions.push(vscode.languages.registerHoverProvider({ language: 'hkscript' }, {
         provideHover(document, position) {
+            console.log('HKS: hover at ' + position.line + ',' + position.character);
             const info = getHint(document.uri.fsPath, position);
-            if (!info || info.kind === '?')
+            if (!info || info.kind === '?') {
+                console.log('HKS: hover no info');
                 return null;
+            }
             return new vscode.Hover(`**${info.name}**  \`${info.type}\`  \n${info.kind}`);
         }
     }));
