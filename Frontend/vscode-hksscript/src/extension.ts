@@ -8,90 +8,76 @@ export function activate(context: vscode.ExtensionContext) {
     item.show();
     context.subscriptions.push(item);
 
-    const kwDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(203,166,247,0.3)', isWholeLine: true });
-    const tpDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(166,227,161,0.3)', isWholeLine: true });
-    const fnDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(249,226,175,0.3)', isWholeLine: true });
-    const coDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(108,112,134,0.3)', isWholeLine: true });
-    const stDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(137,180,250,0.3)', isWholeLine: true });
-    const nuDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(250,179,135,0.3)', isWholeLine: true });
-    context.subscriptions.push(kwDec, tpDec, fnDec, coDec, stDec, nuDec);
-
     function update(editor: vscode.TextEditor | undefined) {
-        console.log('HKS: update called, editor=' + (editor ? 'yes' : 'no'));
         if (!editor) return;
-        console.log('HKS: lang=|' + editor.document.languageId + '|');
-        // 不检查语言，直接尝试高亮
-
-        console.log('HKS: starting highlight');
-
-        try {
-            const text = editor.document.getText();
-            console.log('HKS: got text len=' + text.length);
-
-            // 简化测试：只涂第一行
-            const line = editor.document.lineAt(0);
-            const testDec = vscode.window.createTextEditorDecorationType({
-                backgroundColor: 'rgba(255,0,0,0.3)',
-                isWholeLine: true
-            });
-            editor.setDecorations(testDec, [line.range]);
-            context.subscriptions.push(testDec);
-            console.log('HKS: test decoration set');
-        } catch (e) {
-            console.log('HKS: ERROR: ' + String(e));
-        }
-
+        console.log('HKS: update, lang=' + editor.document.languageId);
         const text = editor.document.getText();
 
-        const posAt = (offset: number) => editor.document.positionAt(offset);
-        const kw: vscode.Range[] = [];
-        const tp: vscode.Range[] = [];
-        const fn: vscode.Range[] = [];
-        const co: vscode.Range[] = [];
-        const st: vscode.Range[] = [];
-        const nu: vscode.Range[] = [];
+        const kwR: vscode.Range[] = [];
+        const tpR: vscode.Range[] = [];
+        const fnR: vscode.Range[] = [];
+        const coR: vscode.Range[] = [];
+        const stR: vscode.Range[] = [];
+        const nuR: vscode.Range[] = [];
 
         let m: RegExpExecArray | null;
 
         // strings
         while ((m = /"(\\.|[^"\\])*"/g.exec(text)) !== null)
-            st.push(new vscode.Range(posAt(m.index), posAt(m.index + m[0].length)));
+            stR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
 
         // comments
         while ((m = /#[^\n]*/g.exec(text)) !== null)
-            co.push(new vscode.Range(posAt(m.index), posAt(m.index + m[0].length)));
+            coR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
 
         // numbers
         while ((m = /\b\d+(\.\d+)?\b/g.exec(text)) !== null)
-            nu.push(new vscode.Range(posAt(m.index), posAt(m.index + m[0].length)));
+            nuR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
 
         // keywords
         for (const w of ['import','def','if','elif','else','return','query','from','with','and','or','not','true','false'])
             while ((m = new RegExp('\\b' + w + '\\b', 'g').exec(text)) !== null)
-                kw.push(new vscode.Range(posAt(m.index), posAt(m.index + m[0].length)));
+                kwR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
 
         // types
         for (const w of ['int','float','string','bool','Mat','Set','Circle','Range','void'])
             while ((m = new RegExp('\\b' + w + '\\b', 'g').exec(text)) !== null)
-                tp.push(new vscode.Range(posAt(m.index), posAt(m.index + m[0].length)));
+                tpR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
 
         // functions
         for (const w of ['load','save','print','len','range'])
             while ((m = new RegExp('\\b' + w + '\\b', 'g').exec(text)) !== null)
-                fn.push(new vscode.Range(posAt(m.index), posAt(m.index + m[0].length)));
+                fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
 
         // function calls: word + (
         while ((m = /\b([a-zA-Z_]\w*)\s*\(/g.exec(text)) !== null)
-            fn.push(new vscode.Range(posAt(m.index), posAt(m.index + m[1].length)));
+            fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[1].length)));
 
-        editor.setDecorations(kwDec, kw);
-        editor.setDecorations(tpDec, tp);
-        editor.setDecorations(fnDec, fn);
-        editor.setDecorations(coDec, co);
-        editor.setDecorations(stDec, st);
-        editor.setDecorations(nuDec, nu);
-
-        console.log('HKS: applied ' + (kw.length + tp.length + fn.length + co.length + st.length + nu.length) + ' ranges');
+        editor.setDecorations(
+            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(203,166,247,0.3)', isWholeLine: true }),
+            kwR
+        );
+        editor.setDecorations(
+            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(166,227,161,0.3)', isWholeLine: true }),
+            tpR
+        );
+        editor.setDecorations(
+            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(249,226,175,0.3)', isWholeLine: true }),
+            fnR
+        );
+        editor.setDecorations(
+            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(108,112,134,0.3)', isWholeLine: true }),
+            coR
+        );
+        editor.setDecorations(
+            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(137,180,250,0.3)', isWholeLine: true }),
+            stR
+        );
+        editor.setDecorations(
+            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(250,179,135,0.3)', isWholeLine: true }),
+            nuR
+        );
+        console.log('HKS: done');
     }
 
     context.subscriptions.push(
@@ -102,5 +88,5 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    setTimeout(() => update(vscode.window.activeTextEditor), 100);
+    setTimeout(() => update(vscode.window.activeTextEditor), 500);
 }
