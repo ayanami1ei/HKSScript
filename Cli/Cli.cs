@@ -37,7 +37,12 @@ public class Cli
             case "diagnose":      DiagnoseFile(args[1]); break;
             case "run":           RunFile(args[1]);      break;
             case "code-present":  CodePresent(args[1]);  break;
-            case "hint":          HintFile(args[1], int.Parse(args[2]), int.Parse(args[3])); break;
+            case "hint":
+                if (args.Length >= 4)
+                    HintFile(args[1], int.Parse(args[2]), int.Parse(args[3]));
+                else
+                    Console.Error.WriteLine("用法: hint <文件> <行号> <列号>");
+                break;
             default:              PrintHelp();           break;
         }
     }
