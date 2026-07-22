@@ -19,9 +19,8 @@ function activate(context) {
         console.log('HKS: update called, editor=' + (editor ? 'yes' : 'no'));
         if (!editor)
             return;
-        console.log('HKS: lang=' + editor.document.languageId);
-        if (editor.document.languageId !== 'hkscript')
-            return;
+        console.log('HKS: lang=|' + editor.document.languageId + '|');
+        // 不检查语言，直接尝试高亮
         console.log('HKS: starting highlight');
         try {
             const text = editor.document.getText();
