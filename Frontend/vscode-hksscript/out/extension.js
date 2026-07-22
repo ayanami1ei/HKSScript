@@ -18,12 +18,14 @@ function activate(context) {
             return;
         try {
             const line = editor.document.lineAt(0);
-            console.log('HKS: line 0 length=' + line.text.length);
-            editor.setDecorations(dec, [new vscode.Range(line.range.start, line.range.end)]);
+            console.log('HKS: line 0 text=' + line.text.substring(0, 20));
+            const range = new vscode.Range(line.range.start, line.range.end);
+            console.log('HKS: range=' + range.start.line + ',' + range.start.character + '-' + range.end.line + ',' + range.end.character);
+            editor.setDecorations(dec, [range]);
             console.log('HKS: decoration applied');
         }
         catch (e) {
-            console.error('HKS: error: ' + e);
+            console.log('HKS: ERROR: ' + String(e));
         }
     }
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(update), vscode.workspace.onDidChangeTextDocument(e => {
