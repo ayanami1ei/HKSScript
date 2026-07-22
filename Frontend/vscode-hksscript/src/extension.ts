@@ -3,15 +3,17 @@ import * as vscode from 'vscode';
 export function activate(context: vscode.ExtensionContext) {
     console.log('HKS: activate() called');
 
-    // 最简单的测试：把第一行涂成红色
     const dec = vscode.window.createTextEditorDecorationType({
         backgroundColor: 'rgba(255,0,0,0.3)'
     });
     context.subscriptions.push(dec);
 
     function update(editor: vscode.TextEditor | undefined) {
-        if (!editor || editor.document.languageId !== 'hkscript') return;
+        if (!editor) { console.log('HKS: no editor'); return; }
+        console.log('HKS: editor lang=' + editor.document.languageId + ' uri=' + editor.document.uri.toString());
+        if (editor.document.languageId !== 'hkscript') return;
         const line = editor.document.lineAt(0);
+        console.log('HKS: applying decoration to line 0');
         editor.setDecorations(dec, [new vscode.Range(line.range.start, line.range.end)]);
     }
 
@@ -22,5 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    console.log('HKS: handlers registered');
+    console.log('HKS: current editor=' + (vscode.window.activeTextEditor ? 'yes' : 'no'));
     if (vscode.window.activeTextEditor) update(vscode.window.activeTextEditor);
 }
