@@ -122,6 +122,30 @@ export function activate(context: vscode.ExtensionContext) {
     );
     // ─── 类型提示 ───
     console.log('HKS: registering hover');
+
+    // ─── 内联类型提示 ───
+    context.subscriptions.push(
+        vscode.languages.registerInlayHintsProvider({ pattern: '**/*.hks' }, {
+            provideInlayHints(document, _range) {
+                const hints: vscode.InlayHint[] = [];
+                const map = getSymbolMap(document.uri.fsPath);
+                if (!map) return hints;
+
+                for (const sym of map) {
+                    const line = sym.line - 1;
+                    const col = sym.column + sym.length;
+                    const hint = new vscode.InlayHint(
+                        new vscode.Position(line, col),
+                        `: ${sym.type}`,
+                        vscode.InlayHintKind.Type
+                    );
+                    hints.push(hint);
+                }
+                return hints;
+            }
+        })
+    );
+
     context.subscriptions.push(
         vscode.languages.registerHoverProvider({ scheme: 'file', pattern: '**/*.hks' }, {
             provideHover(document, position) {
@@ -246,6 +270,36 @@ export function activate(context: vscode.ExtensionContext) {
             const data = JSON.parse(result.stdout);
             if (!data || data.kind === '?') return null;
             return data;
+        } catch { return null; }
+    }
+
+    function getSymbolMap(filePath: string): any[] | null {
+        try {
+            const config = vscode.workspace.getConfiguration('hkscript');
+            const compilerPath = config.get<string>('compilerPath') || '';
+            let cmd: string;
+            let args: string[];
+            const opts: any = { timeout: 15000, encoding: 'utf-8' as const };
+
+            if (compilerPath) {
+                if (compilerPath.endsWith('.dll')) {
+                    cmd = 'dotnet';
+                    args = [compilerPath, 'code-present', filePath];
+                } else {
+                    cmd = compilerPath;
+                    args = ['code-present', filePath];
+                }
+            } else {
+                const root = findProjectRoot(filePath);
+                if (!root) return null;
+                cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
+                args = ['run', '--', 'code-present', filePath];
+                opts.cwd = root;
+            }
+
+            const result = cp.spawnSync(cmd, args, opts);
+            if (result.status !== 0) return null;
+            return JSON.parse(result.stdout) as any[];
         } catch { return null; }
     }
 
