@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 const vscode = require("vscode");
 function activate(context) {
+    console.log('HKS: activate() called');
     // 最简单的测试：把第一行涂成红色
     const dec = vscode.window.createTextEditorDecorationType({
         backgroundColor: 'rgba(255,0,0,0.3)'

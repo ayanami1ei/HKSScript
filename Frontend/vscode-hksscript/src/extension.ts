@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
+    console.log('HKS: activate() called');
+
     // 最简单的测试：把第一行涂成红色
     const dec = vscode.window.createTextEditorDecorationType({
         backgroundColor: 'rgba(255,0,0,0.3)'
