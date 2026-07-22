@@ -2,7 +2,7 @@
 
 m=load("./image.png")
 n=gray(m)
-save("./")
+save(n, "./gray1.png")
 
 load("./image.png")
     =>gray()
