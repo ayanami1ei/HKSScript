@@ -10,14 +10,14 @@ public class Many<T>(IEnumerable<T> items) : Pack<T>
     private readonly List<T> _items = items.ToList();
 
     public IReadOnlyList<T> Values => _items;
-    public int Count => _items.Count;
+    public int Len => _items.Count;
 
     public Many<T> Map(Func<T, T> fn)
     {
         return new Many<T>(_items.Select(fn));
     }
 
-    public Many<T> Filter(Func<T, bool> pred)
+    public Many<T> Query(Func<T, bool> pred)
     {
         return new Many<T>(_items.Where(pred));
     }
