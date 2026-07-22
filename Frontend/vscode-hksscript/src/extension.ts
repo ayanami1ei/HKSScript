@@ -1,16 +1,24 @@
 import * as vscode from 'vscode';
 
+// 模块作用域，不会被GC
+let kwDec: vscode.TextEditorDecorationType;
+let tpDec: vscode.TextEditorDecorationType;
+let fnDec: vscode.TextEditorDecorationType;
+let coDec: vscode.TextEditorDecorationType;
+let stDec: vscode.TextEditorDecorationType;
+let nuDec: vscode.TextEditorDecorationType;
+
 export function activate(context: vscode.ExtensionContext) {
     console.log('HKS: activate');
 
-    // 全局错误捕获
-    process.on('uncaughtException', (err) => {
-        console.log('HKS: UNCAUGHT: ' + err.message);
-        console.log('HKS: stack: ' + err.stack);
-    });
-    process.on('unhandledRejection', (reason) => {
-        console.log('HKS: UNHANDLED REJECTION: ' + String(reason));
-    });
+    // 创建装饰器
+    kwDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(203,166,247,0.3)' });
+    tpDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(166,227,161,0.3)' });
+    fnDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(249,226,175,0.3)' });
+    coDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(108,112,134,0.3)' });
+    stDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(137,180,250,0.3)' });
+    nuDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(250,179,135,0.3)' });
+    context.subscriptions.push(kwDec, tpDec, fnDec, coDec, stDec, nuDec);
 
     const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
     item.text = 'HKS ✓';
@@ -19,10 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     function update(editor: vscode.TextEditor | undefined) {
         if (!editor) return;
-        console.log('HKS: update, lang=' + editor.document.languageId);
-        try {
-            const text = editor.document.getText();
-
+        const text = editor.document.getText();
         const kwR: vscode.Range[] = [];
         const tpR: vscode.Range[] = [];
         const fnR: vscode.Range[] = [];
@@ -32,65 +37,32 @@ export function activate(context: vscode.ExtensionContext) {
 
         let m: RegExpExecArray | null;
 
-        // strings
         while ((m = /"(\\.|[^"\\])*"/g.exec(text)) !== null)
             stR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-
-        // comments
         while ((m = /#[^\n]*/g.exec(text)) !== null)
             coR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-
-        // numbers
         while ((m = /\b\d+(\.\d+)?\b/g.exec(text)) !== null)
             nuR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-
-        // keywords
         for (const w of ['import','def','if','elif','else','return','query','from','with','and','or','not','true','false'])
             while ((m = new RegExp('\\b' + w + '\\b', 'g').exec(text)) !== null)
                 kwR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-
-        // types
         for (const w of ['int','float','string','bool','Mat','Set','Circle','Range','void'])
             while ((m = new RegExp('\\b' + w + '\\b', 'g').exec(text)) !== null)
                 tpR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-
-        // functions
         for (const w of ['load','save','print','len','range'])
             while ((m = new RegExp('\\b' + w + '\\b', 'g').exec(text)) !== null)
                 fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-
-        // function calls: word + (
         while ((m = /\b([a-zA-Z_]\w*)\s*\(/g.exec(text)) !== null)
             fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[1].length)));
 
-        editor.setDecorations(
-            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(203,166,247,0.3)', isWholeLine: true }),
-            kwR
-        );
-        editor.setDecorations(
-            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(166,227,161,0.3)', isWholeLine: true }),
-            tpR
-        );
-        editor.setDecorations(
-            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(249,226,175,0.3)', isWholeLine: true }),
-            fnR
-        );
-        editor.setDecorations(
-            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(108,112,134,0.3)', isWholeLine: true }),
-            coR
-        );
-        editor.setDecorations(
-            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(137,180,250,0.3)', isWholeLine: true }),
-            stR
-        );
-        editor.setDecorations(
-            vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(250,179,135,0.3)', isWholeLine: true }),
-            nuR
-        );
-        console.log('HKS: done');
-        } catch (e) {
-            console.log('HKS: ERROR: ' + String(e));
-        }
+        editor.setDecorations(kwDec, kwR);
+        editor.setDecorations(tpDec, tpR);
+        editor.setDecorations(fnDec, fnR);
+        editor.setDecorations(coDec, coR);
+        editor.setDecorations(stDec, stR);
+        editor.setDecorations(nuDec, nuR);
+
+        console.log('HKS: ' + (kwR.length + tpR.length + fnR.length + coR.length + stR.length + nuR.length) + ' ranges');
     }
 
     context.subscriptions.push(
@@ -101,8 +73,5 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    setTimeout(() => {
-        try { update(vscode.window.activeTextEditor); }
-        catch (e) { console.log('HKS: TIMEOUT ERROR: ' + String(e)); }
-    }, 500);
+    setTimeout(() => update(vscode.window.activeTextEditor), 500);
 }
