@@ -43,94 +43,53 @@ export function activate(context: vscode.ExtensionContext) {
 
         let m: RegExpExecArray | null;
 
-        // ─── 编译前端符号 ───
-
         const symbols = getSymbols(uri);
-        const fnPositions = new Set<number>();
-        const vaPositions = new Set<number>();
+        const fnPos = new Set<number>();
+        const vaPos = new Set<number>();
 
         if (symbols) {
             for (const sym of symbols) {
                 const off = editor.document.offsetAt(new vscode.Position(sym.line - 1, sym.column));
                 if (sym.kind === 'function') {
-                    fnPositions.add(off);
-                    fnR.push(new vscode.Range(
-                        editor.document.positionAt(off),
-                        editor.document.positionAt(off + sym.length)
-                    ));
+                    fnPos.add(off);
+                    fnR.push(new vscode.Range(editor.document.positionAt(off), editor.document.positionAt(off + sym.length)));
                 } else if (sym.kind === 'variable') {
-                    vaPositions.add(off);
-                    vaR.push(new vscode.Range(
-                        editor.document.positionAt(off),
-                        editor.document.positionAt(off + sym.length)
-                    ));
+                    vaPos.add(off);
+                    vaR.push(new vscode.Range(editor.document.positionAt(off), editor.document.positionAt(off + sym.length)));
                 }
             }
         }
 
-        // ─── 正则补充（不覆盖编译前端符号） ───
+        function covered(pos: number) { return fnPos.has(pos) || vaPos.has(pos); }
 
-        function isCovered(pos: number): boolean {
-            return fnPositions.has(pos) || vaPositions.has(pos);
-        }
-
-        // strings
         const strRe = /"(\\.|[^"\\])*"/g;
         while ((m = strRe.exec(text)) !== null)
             stR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-
-        // comments
         const comRe = /#[^\n]*/g;
         while ((m = comRe.exec(text)) !== null)
             coR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-
-        // numbers
         const numRe = /\b\d+(\.\d+)?\b/g;
-        while ((m = numRe.exec(text)) !== null) {
-            if (isCovered(m.index)) continue;
-            nuR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-        }
-
-        // keywords (always, compiler doesn't provide these)
+        while ((m = numRe.exec(text)) !== null) { if (!covered(m.index)) nuR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length))); }
         for (const w of ['import','def','if','elif','else','return','query','from','with','and','or','not','true','false']) {
             const re = new RegExp('\\b' + w + '\\b', 'g');
-            while ((m = re.exec(text)) !== null)
-                kwR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
+            while ((m = re.exec(text)) !== null) kwR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
         }
-
-        // types (always)
         for (const w of ['int','float','string','bool','Mat','Set','Circle','Range','void']) {
             const re = new RegExp('\\b' + w + '\\b', 'g');
-            while ((m = re.exec(text)) !== null)
-                tpR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
+            while ((m = re.exec(text)) !== null) tpR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
         }
 
-        // 如果编译前端不可用，用正则兜底
         if (!symbols || symbols.length === 0) {
-            // builtin functions
             for (const w of ['load','save','print','len','range']) {
                 const re = new RegExp('\\b' + w + '\\b', 'g');
-                while ((m = re.exec(text)) !== null)
-                    fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
+                while ((m = re.exec(text)) !== null) fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
             }
-            // function calls
             const callRe = /\b([a-zA-Z_]\w*)\s*\(/g;
-            while ((m = callRe.exec(text)) !== null) {
-                const kws = new Set(['import','def','if','elif','else','return','query','from','with','and','or','not','true','false',
-                                     'int','float','string','bool','Mat','Set','Circle','Range','void']);
-                if (kws.has(m[1])) continue;
-                fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[1].length)));
-            }
-            // variables fallback
+            const skip = new Set(['import','def','if','elif','else','return','query','from','with','and','or','not','true','false','int','float','string','bool','Mat','Set','Circle','Range','void']);
+            while ((m = callRe.exec(text)) !== null) { if (!skip.has(m[1])) fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[1].length))); }
             const varRe = /\b[a-zA-Z_]\w*\b/g;
-            const skip = new Set(['import','def','if','elif','else','return','query','from','with','and','or','not','true','false',
-                                 'int','float','string','bool','Mat','Set','Circle','Range','void',
-                                 'load','save','print','len','range']);
-            while ((m = varRe.exec(text)) !== null) {
-                if (skip.has(m[0])) continue;
-                if (text.substring(m.index + m[0].length).trimStart().startsWith('(')) continue;
-                vaR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-            }
+            const skip2 = new Set([...skip, 'load','save','print','len','range']);
+            while ((m = varRe.exec(text)) !== null) { if (!skip2.has(m[0]) && !text.substring(m.index + m[0].length).trimStart().startsWith('(')) vaR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length))); }
         }
 
         editor.setDecorations(kwDec, kwR);
@@ -146,59 +105,54 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.onDidChangeActiveTextEditor(update),
         vscode.workspace.onDidSaveTextDocument(doc => {
             if (doc.languageId === 'hkscript') {
-                symbolCache = null; // 清除缓存
-                const editor = vscode.window.activeTextEditor;
-                if (editor?.document === doc) update(editor);
+                const ed = vscode.window.activeTextEditor;
+                if (ed?.document === doc) update(ed);
             }
         }),
         vscode.workspace.onDidChangeTextDocument(e => {
-            if (vscode.window.activeTextEditor?.document === e.document)
-                update(vscode.window.activeTextEditor);
+            if (vscode.window.activeTextEditor?.document === e.document) update(vscode.window.activeTextEditor);
         })
     );
-
     setTimeout(() => update(vscode.window.activeTextEditor), 500);
-}
 
-// ─── 调用编译前端 ───
+    interface SymbolInfo {
+        name: string; kind: string; type: string;
+        line: number; column: number; length: number;
+    }
 
-interface SymbolInfo {
-    name: string; kind: string; type: string;
-    line: number; column: number; length: number;
-}
+    function getSymbols(filePath: string): SymbolInfo[] | null {
+        try {
+            const config = vscode.workspace.getConfiguration('hkscript');
+            const compilerPath = config.get<string>('compilerPath') || '';
+            let cmd: string;
+            let args: string[];
+            const opts: any = { timeout: 15000, encoding: 'utf-8' as const };
 
-let symbolCache: { path: string; symbols: SymbolInfo[] } | null = null;
+            if (compilerPath) {
+                cmd = 'dotnet';
+                args = [compilerPath, 'code-present', filePath];
+            } else {
+                const root = findProjectRoot(filePath);
+                if (!root) return null;
+                cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
+                args = ['run', '--', 'code-present', filePath];
+                opts.cwd = root;
+            }
 
-function getSymbols(filePath: string): SymbolInfo[] | null {
-    const projectRoot = findProjectRoot(filePath);
-    if (!projectRoot) return null;
+            const result = cp.spawnSync(cmd, args, opts);
+            if (result.status !== 0) return null;
+            return JSON.parse(result.stdout) as SymbolInfo[];
+        } catch { return null; }
+    }
 
-    // 缓存同名文件
-    if (symbolCache?.path === filePath) return symbolCache.symbols;
-
-    try {
-        const cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
-        const result = cp.spawnSync(cmd, ['run', '--', 'code-present', filePath], {
-            cwd: projectRoot,
-            timeout: 10000,
-            encoding: 'utf-8'
-        });
-        if (result.status !== 0) return null;
-        const symbols = JSON.parse(result.stdout) as SymbolInfo[];
-        symbolCache = { path: filePath, symbols };
-        return symbols;
-    } catch {
+    function findProjectRoot(filePath: string): string | null {
+        try {
+            let dir = path.dirname(filePath);
+            while (dir !== path.dirname(dir)) {
+                if (require('fs').existsSync(path.join(dir, 'HKSScript.csproj'))) return dir;
+                dir = path.dirname(dir);
+            }
+        } catch {}
         return null;
     }
-}
-
-function findProjectRoot(filePath: string): string | null {
-    try {
-        let dir = path.dirname(filePath);
-        while (dir !== path.dirname(dir)) {
-            if (require('fs').existsSync(path.join(dir, 'HKSScript.csproj'))) return dir;
-            dir = path.dirname(dir);
-        }
-    } catch {}
-    return null;
 }

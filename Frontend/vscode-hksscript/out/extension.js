@@ -40,82 +40,61 @@ function activate(context) {
         const stR = [];
         const nuR = [];
         let m;
-        // ─── 编译前端符号 ───
         const symbols = getSymbols(uri);
-        const fnPositions = new Set();
-        const vaPositions = new Set();
+        const fnPos = new Set();
+        const vaPos = new Set();
         if (symbols) {
             for (const sym of symbols) {
                 const off = editor.document.offsetAt(new vscode.Position(sym.line - 1, sym.column));
                 if (sym.kind === 'function') {
-                    fnPositions.add(off);
+                    fnPos.add(off);
                     fnR.push(new vscode.Range(editor.document.positionAt(off), editor.document.positionAt(off + sym.length)));
                 }
                 else if (sym.kind === 'variable') {
-                    vaPositions.add(off);
+                    vaPos.add(off);
                     vaR.push(new vscode.Range(editor.document.positionAt(off), editor.document.positionAt(off + sym.length)));
                 }
             }
         }
-        // ─── 正则补充（不覆盖编译前端符号） ───
-        function isCovered(pos) {
-            return fnPositions.has(pos) || vaPositions.has(pos);
-        }
-        // strings
+        function covered(pos) { return fnPos.has(pos) || vaPos.has(pos); }
         const strRe = /"(\\.|[^"\\])*"/g;
         while ((m = strRe.exec(text)) !== null)
             stR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-        // comments
         const comRe = /#[^\n]*/g;
         while ((m = comRe.exec(text)) !== null)
             coR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-        // numbers
         const numRe = /\b\d+(\.\d+)?\b/g;
         while ((m = numRe.exec(text)) !== null) {
-            if (isCovered(m.index))
-                continue;
-            nuR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
+            if (!covered(m.index))
+                nuR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
         }
-        // keywords (always, compiler doesn't provide these)
         for (const w of ['import', 'def', 'if', 'elif', 'else', 'return', 'query', 'from', 'with', 'and', 'or', 'not', 'true', 'false']) {
             const re = new RegExp('\\b' + w + '\\b', 'g');
             while ((m = re.exec(text)) !== null)
                 kwR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
         }
-        // types (always)
         for (const w of ['int', 'float', 'string', 'bool', 'Mat', 'Set', 'Circle', 'Range', 'void']) {
             const re = new RegExp('\\b' + w + '\\b', 'g');
             while ((m = re.exec(text)) !== null)
                 tpR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
         }
-        // 如果编译前端不可用，用正则兜底
         if (!symbols || symbols.length === 0) {
-            // builtin functions
             for (const w of ['load', 'save', 'print', 'len', 'range']) {
                 const re = new RegExp('\\b' + w + '\\b', 'g');
                 while ((m = re.exec(text)) !== null)
                     fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
             }
-            // function calls
             const callRe = /\b([a-zA-Z_]\w*)\s*\(/g;
+            const skip = new Set(['import', 'def', 'if', 'elif', 'else', 'return', 'query', 'from', 'with', 'and', 'or', 'not', 'true', 'false', 'int', 'float', 'string', 'bool', 'Mat', 'Set', 'Circle', 'Range', 'void']);
             while ((m = callRe.exec(text)) !== null) {
-                const kws = new Set(['import', 'def', 'if', 'elif', 'else', 'return', 'query', 'from', 'with', 'and', 'or', 'not', 'true', 'false',
-                    'int', 'float', 'string', 'bool', 'Mat', 'Set', 'Circle', 'Range', 'void']);
-                if (kws.has(m[1]))
-                    continue;
-                fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[1].length)));
+                if (!skip.has(m[1]))
+                    fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[1].length)));
             }
-            // variables fallback
             const varRe = /\b[a-zA-Z_]\w*\b/g;
-            const skip = new Set(['import', 'def', 'if', 'elif', 'else', 'return', 'query', 'from', 'with', 'and', 'or', 'not', 'true', 'false',
-                'int', 'float', 'string', 'bool', 'Mat', 'Set', 'Circle', 'Range', 'void',
-                'load', 'save', 'print', 'len', 'range']);
+            const skip2 = new Set([...skip, 'load', 'save', 'print', 'len', 'range']);
             while ((m = varRe.exec(text)) !== null) {
-                if (skip.has(m[0]))
-                    continue;
-                if (text.substring(m.index + m[0].length).trimStart().startsWith('('))
-                    continue;
-                vaR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
+                if (!skip2.has(m[0]) && !text.substring(m.index + m[0].length).trimStart().startsWith('('))
+                    vaR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
             }
         }
         editor.setDecorations(kwDec, kwR);
@@ -128,52 +107,54 @@ function activate(context) {
     }
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(update), vscode.workspace.onDidSaveTextDocument(doc => {
         if (doc.languageId === 'hkscript') {
-            symbolCache = null; // 清除缓存
-            const editor = vscode.window.activeTextEditor;
-            if (editor?.document === doc)
-                update(editor);
+            const ed = vscode.window.activeTextEditor;
+            if (ed?.document === doc)
+                update(ed);
         }
     }), vscode.workspace.onDidChangeTextDocument(e => {
         if (vscode.window.activeTextEditor?.document === e.document)
             update(vscode.window.activeTextEditor);
     }));
     setTimeout(() => update(vscode.window.activeTextEditor), 500);
-}
-let symbolCache = null;
-function getSymbols(filePath) {
-    const projectRoot = findProjectRoot(filePath);
-    if (!projectRoot)
-        return null;
-    // 缓存同名文件
-    if (symbolCache?.path === filePath)
-        return symbolCache.symbols;
-    try {
-        const cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
-        const result = cp.spawnSync(cmd, ['run', '--', 'code-present', filePath], {
-            cwd: projectRoot,
-            timeout: 10000,
-            encoding: 'utf-8'
-        });
-        if (result.status !== 0)
+    function getSymbols(filePath) {
+        try {
+            const config = vscode.workspace.getConfiguration('hkscript');
+            const compilerPath = config.get('compilerPath') || '';
+            let cmd;
+            let args;
+            const opts = { timeout: 15000, encoding: 'utf-8' };
+            if (compilerPath) {
+                cmd = 'dotnet';
+                args = [compilerPath, 'code-present', filePath];
+            }
+            else {
+                const root = findProjectRoot(filePath);
+                if (!root)
+                    return null;
+                cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
+                args = ['run', '--', 'code-present', filePath];
+                opts.cwd = root;
+            }
+            const result = cp.spawnSync(cmd, args, opts);
+            if (result.status !== 0)
+                return null;
+            return JSON.parse(result.stdout);
+        }
+        catch {
             return null;
-        const symbols = JSON.parse(result.stdout);
-        symbolCache = { path: filePath, symbols };
-        return symbols;
-    }
-    catch {
-        return null;
-    }
-}
-function findProjectRoot(filePath) {
-    try {
-        let dir = path.dirname(filePath);
-        while (dir !== path.dirname(dir)) {
-            if (require('fs').existsSync(path.join(dir, 'HKSScript.csproj')))
-                return dir;
-            dir = path.dirname(dir);
         }
     }
-    catch { }
-    return null;
+    function findProjectRoot(filePath) {
+        try {
+            let dir = path.dirname(filePath);
+            while (dir !== path.dirname(dir)) {
+                if (require('fs').existsSync(path.join(dir, 'HKSScript.csproj')))
+                    return dir;
+                dir = path.dirname(dir);
+            }
+        }
+        catch { }
+        return null;
+    }
 }
 //# sourceMappingURL=extension.js.map
