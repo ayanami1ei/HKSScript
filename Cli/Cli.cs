@@ -3,7 +3,6 @@ using HksScript.Algorithms;
 using HksScript.Lexer;
 using HksScript.TypeChecker;
 using HksScript.Lowering;
-using HksScript.Hir;
 using Antlr4.Runtime;
 
 namespace HksScript.Cli;
@@ -14,6 +13,7 @@ public class Cli
 
     public Cli()
     {
+        BuiltinRegistry.RegisterBuiltins(funcTable);
         ModuleInit.RegisterAll(funcTable);
     }
 
@@ -30,11 +30,11 @@ public class Cli
             case "list":
                 ListFunctions();
                 break;
-            case "parse":
-                ParseFile(args[1]);
+            case "check":
+                CheckFile(args[1]);
                 break;
             case "run":
-                Console.Error.WriteLine("TODO: 执行脚本");
+                RunFile(args[1]);
                 break;
             default:
                 PrintHelp();
@@ -42,8 +42,11 @@ public class Cli
         }
     }
 
-    private void ParseFile(string path)
+    // ─── 管线：源码 → AST ───
+
+    private Ast.Program? BuildAst(string path, out CheckResult? checkResult)
     {
+        checkResult = null;
         var code = File.ReadAllText(path);
         var stream = new AntlrInputStream(code);
         var lexer = new HksScriptLexer(stream);
@@ -53,6 +56,7 @@ public class Cli
         var tokens = new CommonTokenStream(source);
         var parser = new HksScriptParser(tokens);
         parser.BuildParseTree = true;
+        parser.RemoveErrorListeners();
 
         var tree = parser.program();
         var builder = new AstBuilder();
@@ -63,140 +67,60 @@ public class Cli
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"AST 构建失败: {ex.Message}");
+            Console.Error.WriteLine($"解析失败: {ex.Message}");
+            return null;
+        }
+
+        var checker = new TypeChecker.TypeChecker();
+        checkResult = checker.Check(ast);
+        return ast;
+    }
+
+    // ─── check 命令 ───
+
+    private void CheckFile(string path)
+    {
+        var ast = BuildAst(path, out var checkResult);
+        if (ast == null) return;
+
+        bool hasError = false;
+
+        if (checkResult!.HasErrors)
+        {
+            Console.WriteLine("类型错误:");
+            foreach (var err in checkResult.Errors)
+            {
+                Console.WriteLine($"  {err}");
+                hasError = true;
+            }
+        }
+
+        if (!hasError)
+            Console.WriteLine("检查通过");
+    }
+
+    // ─── run 命令 ───
+
+    private void RunFile(string path)
+    {
+        var ast = BuildAst(path, out var checkResult);
+        if (ast == null) return;
+
+        if (checkResult!.HasErrors)
+        {
+            Console.WriteLine("类型错误，终止执行:");
+            foreach (var err in checkResult.Errors)
+                Console.WriteLine($"  {err}");
             return;
         }
 
-        Console.WriteLine("=== AST ===");
-        PrintAst(Console.Out, ast, 0);
-
-        var checker = new TypeChecker.TypeChecker();
-        var checkResult = checker.Check(ast);
-        if (checkResult.HasErrors)
-        {
-            Console.WriteLine("\n=== 类型错误 ===");
-            foreach (var err in checkResult.Errors)
-                Console.WriteLine($"  {err}");
-        }
-        else
-        {
-            Console.WriteLine("\n类型检查通过");
-        }
-
-        // Lowering → HIR
-        var lowerer = new LoweringPass();
+        var lowerer = new LoweringPass(funcTable);
         var hir = lowerer.Lower(ast);
-        Console.WriteLine($"\n=== HIR ({hir.Length} 条指令) ===");
-        foreach (var node in hir)
-        {
-            var name = node.Type.ToString();
-            var extra = node switch
-            {
-                Call c     => $"{c.Name}({string.Join(", ", c.Args)})",
-                New n      => $"var{n.Var}={n.ConstValue?.ToString() ?? "?"}",
-                Assign a   => $"{a.Lhs} <- {a.Rhs}",
-                Branch b   => $"if t{b.Cond} then[{b.Then.Length}] else[{b.Else?.Length}]",
-                Return r   => $"t{r.Var}",
-                Import im  => $"[{string.Join(", ", im.Imported ?? [])}]",
-                _          => ""
-            };
-            Console.WriteLine($"  t{node.Id,-3} {name,-8} {extra}");
-        }
-    }
 
-    static void PrintAst(TextWriter w, object? node, int depth)
-    {
-        if (node == null) return;
-        var i = new string(' ', depth * 2);
-        w.Write(i);
+        var vm = new HksScript.Interpreter.Interpreter(hir, funcTable);
+        vm.Run();
 
-        switch (node)
-        {
-            case Ast.Program p:
-                w.WriteLine("Program");
-                foreach (var s in p.Statements) PrintAst(w, s, depth + 1);
-                break;
-
-            case Ast.Import imp:
-                w.WriteLine($"Import [{string.Join(", ", imp.Names)}]");
-                break;
-
-            case Ast.Assign a:
-                w.Write($"Assign {a.Name} = ");
-                PrintAst(w, a.Value, 0);
-                w.WriteLine();
-                break;
-
-            case Ast.Return r:
-                w.Write("Return ");
-                PrintAst(w, r.Value, 0);
-                w.WriteLine();
-                break;
-
-            case Ast.If iff:
-                w.Write("If ");
-                PrintAst(w, iff.Condition, 0);
-                w.WriteLine();
-                foreach (var s in iff.Then) PrintAst(w, s, depth + 1);
-                foreach (var e in iff.Elifs)
-                {
-                    w.Write($"{i}  Elif ");
-                    PrintAst(w, e.Condition, 0);
-                    w.WriteLine();
-                    foreach (var s in e.Body) PrintAst(w, s, depth + 2);
-                }
-                if (iff.Else != null)
-                {
-                    w.WriteLine($"{i}  Else:");
-                    foreach (var s in iff.Else) PrintAst(w, s, depth + 2);
-                }
-                break;
-
-            case Ast.FuncDef f:
-                var ps = string.Join(", ", f.Params.Select(p => $"{p.Name}: {p.Type.Name}"));
-                w.WriteLine($"FuncDef {f.Name}({ps}) -> {f.ReturnType?.Name ?? "void"}");
-                foreach (var s in f.Body) PrintAst(w, s, depth + 1);
-                break;
-
-            case Ast.Call c:
-                w.Write($"Call {c.Name}({string.Join(", ", c.Args.Select(a => AstStr(a)))})");
-                break;
-
-            case Ast.Binary b:
-                w.Write($"({AstStr(b.Left)} {b.Op} {AstStr(b.Right)})");
-                break;
-
-            case Ast.Unary u:
-                w.Write($"(not {AstStr(u.Operand)})");
-                break;
-
-            case Ast.Variable v:
-                w.Write(v.Name);
-                break;
-
-            case Ast.Literal l:
-                w.Write(l.Value?.ToString() ?? "nil");
-                break;
-
-            case Ast.QueryFrom q:
-                w.Write($"query from {AstStr(q.Collection)} with {AstStr(q.Condition)}");
-                break;
-
-            case Ast.Pipe p:
-                w.Write($"({AstStr(p.Left)} => {AstStr(p.Right)})");
-                break;
-
-            case Ast.ExprStmt es:
-                w.WriteLine($"Expr {AstStr(es.Value)}");
-                break;
-        }
-    }
-
-    static string AstStr(object? node)
-    {
-        var sw = new StringWriter();
-        PrintAst(sw, node, 0);
-        return sw.ToString()!.TrimEnd();
+        Console.WriteLine("执行完成");
     }
 
     private void ListFunctions()
@@ -218,10 +142,10 @@ public class Cli
 
     private void PrintHelp()
     {
-        Console.WriteLine("用法: dotnet run -- <命令>");
+        Console.WriteLine("用法: dotnet run -- <命令> [参数]");
         Console.WriteLine("命令:");
-        Console.WriteLine("  list      列出已注册的算法函数");
-        Console.WriteLine("  parse <文件>  解析脚本并输出AST");
-        Console.WriteLine("  run <文件>    执行脚本（待实现）");
+        Console.WriteLine("  list             列出已注册的算法函数");
+        Console.WriteLine("  check <文件>     检查脚本类型");
+        Console.WriteLine("  run <文件>       执行脚本");
     }
 }

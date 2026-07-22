@@ -1,5 +1,6 @@
 using AstNode = HksScript.Ast;
 using HirNode = HksScript.Hir;
+using HksScript.Interpreter;
 
 namespace HksScript.Lowering;
 
@@ -7,6 +8,12 @@ public class LoweringPass
 {
     private int nextId;
     private readonly Dictionary<string, int> env = new();
+    private readonly FunctionTable? funcTable;
+
+    public LoweringPass(FunctionTable? funcTable = null)
+    {
+        this.funcTable = funcTable;
+    }
 
     public HirNode.HirBasicNode[] Lower(AstNode.Program program)
     {
@@ -24,7 +31,7 @@ public class LoweringPass
         {
             case AstNode.Import i:       LowerImport(i, result);   break;
             case AstNode.Assign a:       LowerAssign(a, result);   break;
-            case AstNode.FuncDef f:      break;
+            case AstNode.FuncDef f:      LowerFuncDef(f);          break;
             case AstNode.Return r:       LowerReturn(r, result);   break;
             case AstNode.If ifStmt:      LowerIf(ifStmt, result);  break;
             case AstNode.ExprStmt es:    LowerExpr(es.Value, result); break;
@@ -41,18 +48,39 @@ public class LoweringPass
         var rhsId = LowerExpr(assign.Value, result);
 
         if (env.TryGetValue(assign.Name, out var lhsId))
-        {
             result.Add(new HirNode.Assign(NewId(), rhsId, lhsId));
-        }
         else
-        {
             env[assign.Name] = rhsId;
-        }
     }
 
     private void LowerFuncDef(AstNode.FuncDef funcDef)
     {
-        // 函数定义由 FunctionTable 管理，lowering 阶段跳过
+        if (funcTable == null) return;
+
+        var bodyLowerer = new LoweringPass(null);
+        bodyLowerer.nextId = nextId;
+
+        var paramIds = new List<int>();
+        foreach (var param in funcDef.Params)
+        {
+            var id = bodyLowerer.NewId();
+            bodyLowerer.env[param.Name] = id;
+            paramIds.Add(id);
+        }
+
+        var body = new List<HirNode.HirBasicNode>();
+        foreach (var s in funcDef.Body)
+            bodyLowerer.LowerStmt(s, body);
+
+        nextId = bodyLowerer.nextId;
+
+        var scriptFunc = new ScriptFunction(
+            funcDef.Name,
+            funcDef.Params.Select(p => p.Name).ToArray(),
+            paramIds.ToArray(),
+            body.ToArray());
+
+        funcTable.Register(funcDef.Name, scriptFunc);
     }
 
     private void LowerReturn(AstNode.Return ret, List<HirNode.HirBasicNode> result)
