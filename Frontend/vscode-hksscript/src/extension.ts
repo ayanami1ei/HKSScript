@@ -8,12 +8,12 @@ export function activate(context: vscode.ExtensionContext) {
     item.show();
     context.subscriptions.push(item);
 
-    const kwDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(203,166,247,0.3)' });
-    const tpDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(166,227,161,0.3)' });
-    const fnDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(249,226,175,0.3)' });
-    const coDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(108,112,134,0.3)' });
-    const stDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(137,180,250,0.3)' });
-    const nuDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(250,179,135,0.3)' });
+    const kwDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(203,166,247,0.3)', isWholeLine: true });
+    const tpDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(166,227,161,0.3)', isWholeLine: true });
+    const fnDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(249,226,175,0.3)', isWholeLine: true });
+    const coDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(108,112,134,0.3)', isWholeLine: true });
+    const stDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(137,180,250,0.3)', isWholeLine: true });
+    const nuDec = vscode.window.createTextEditorDecorationType({ backgroundColor: 'rgba(250,179,135,0.3)', isWholeLine: true });
     context.subscriptions.push(kwDec, tpDec, fnDec, coDec, stDec, nuDec);
 
     function update(editor: vscode.TextEditor | undefined) {
