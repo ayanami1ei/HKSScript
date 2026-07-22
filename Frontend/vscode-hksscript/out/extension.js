@@ -2,86 +2,114 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 const vscode = require("vscode");
+const keywordColor = { color: '#cba6f7', fontWeight: 'bold' };
+const typeColor = { color: '#a6e3a1' };
+const functionColor = { color: '#f9e2af' };
+const commentColor = { color: '#6c7086', fontStyle: 'italic' };
+const stringColor = { color: '#89b4fa' };
+const numberColor = { color: '#fab387' };
 function activate(context) {
-    // 调试：在状态栏显示扩展已激活
-    const statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    statusItem.text = "$(symbol-color) HKS";
-    statusItem.tooltip = "HKS Script 扩展已激活";
-    statusItem.show();
-    context.subscriptions.push(statusItem);
-    // 调试命令：检查语义高亮
-    context.subscriptions.push(vscode.commands.registerCommand('hkscript.debugTokens', () => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor)
+    // 装饰类型
+    const decKeyword = vscode.window.createTextEditorDecorationType({ rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed, ...keywordColor });
+    const decType = vscode.window.createTextEditorDecorationType({ rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed, ...typeColor });
+    const decFunc = vscode.window.createTextEditorDecorationType({ rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed, ...functionColor });
+    const decComment = vscode.window.createTextEditorDecorationType({ rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed, ...commentColor });
+    const decString = vscode.window.createTextEditorDecorationType({ rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed, ...stringColor });
+    const decNumber = vscode.window.createTextEditorDecorationType({ rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed, ...numberColor });
+    context.subscriptions.push(decKeyword, decType, decFunc, decComment, decString, decNumber);
+    function update(editor) {
+        if (!editor || editor.document.languageId !== 'hkscript')
             return;
-        const tokens = editor.document.getText();
-        vscode.window.showInformationMessage(`HKS: 文档 ${tokens.length} 字符`);
-    }));
-    // 语义高亮提供器
-    const legend = new vscode.SemanticTokensLegend(['function', 'variable', 'type', 'keyword'], ['declaration']);
-    context.subscriptions.push(vscode.languages.registerDocumentSemanticTokensProvider({ language: 'hkscript' }, new HkscriptSemanticTokensProvider(legend), legend));
-    // 调试：输出激活信息
-    console.log('HKS Script 扩展已激活');
-    console.error('HKS Script 错误日志测试');
-}
-class HkscriptSemanticTokensProvider {
-    constructor(legend) {
-        this.legend = legend;
-    }
-    provideDocumentSemanticTokens(document) {
-        const text = document.getText();
-        const lines = text.split('\n');
-        const data = [];
-        let prevLine = 0;
-        let prevChar = 0;
-        function push(line, char, len, type, mod) {
-            data.push(line - prevLine);
-            data.push(line === prevLine ? char - prevChar : char);
-            data.push(len);
-            data.push(type);
-            data.push(mod);
-            prevLine = line;
-            prevChar = char;
+        const text = editor.document.getText();
+        const kwRanges = [];
+        const typeRanges = [];
+        const funcRanges = [];
+        const commentRanges = [];
+        const stringRanges = [];
+        const numRanges = [];
+        const keywords = ['import', 'def', 'if', 'elif', 'else', 'return', 'query', 'from', 'with', 'and', 'or', 'not', 'true', 'false'];
+        const typeNames = ['int', 'float', 'string', 'bool', 'Mat', 'Set', 'Circle', 'Range', 'void'];
+        const builtins = ['load', 'save', 'print', 'len', 'range'];
+        // 先标记字符串区域，避免内部匹配
+        const stringRegions = [];
+        const strRe = /"(\\.|[^"\\])*"/g;
+        let sm;
+        while ((sm = strRe.exec(text)) !== null) {
+            stringRegions.push({ start: sm.index, end: sm.index + sm[0].length });
+            stringRanges.push(new vscode.Range(editor.document.positionAt(sm.index), editor.document.positionAt(sm.index + sm[0].length)));
         }
-        const keywords = new Set(['import', 'def', 'if', 'elif', 'else', 'return', 'query', 'from', 'with', 'and', 'or', 'not', 'true', 'false']);
-        const typeNames = new Set(['int', 'float', 'string', 'bool', 'Mat', 'Set', 'Circle', 'Range', 'void']);
-        const builtins = new Set(['load', 'save', 'print', 'len', 'range']);
-        for (let line = 0; line < lines.length; line++) {
-            const l = lines[line];
-            // 关键字 → type 3 (keyword)
-            for (const kw of keywords) {
-                const re = new RegExp('\\b' + kw + '\\b', 'g');
-                let m;
-                while ((m = re.exec(l)) !== null)
-                    push(line, m.index, m[0].length, 3, 0);
-            }
-            // 类型名 → type 2 (type)
-            for (const t of typeNames) {
-                const re = new RegExp('\\b' + t + '\\b', 'g');
-                let m;
-                while ((m = re.exec(l)) !== null)
-                    push(line, m.index, m[0].length, 2, 0);
-            }
-            // 内置函数 → type 0 (function)
-            for (const fn of builtins) {
-                const re = new RegExp('\\b' + fn + '\\b', 'g');
-                let m;
-                while ((m = re.exec(l)) !== null)
-                    push(line, m.index, m[0].length, 0, 0);
-            }
-            // 函数调用: word + '(' → type 0 (function)
-            const callRe = /\b([a-zA-Z_]\w*)\s*\(/g;
-            let m2;
-            while ((m2 = callRe.exec(l)) !== null) {
-                const name = m2[1];
-                if (keywords.has(name) || typeNames.has(name) || builtins.has(name))
+        function isInString(pos) {
+            return stringRegions.some(r => pos >= r.start && pos < r.end);
+        }
+        // 注释
+        const commentRe = /#[^\n]*|\(\*[\s\S]*?\*\)/g;
+        let cm;
+        while ((cm = commentRe.exec(text)) !== null) {
+            commentRanges.push(new vscode.Range(editor.document.positionAt(cm.index), editor.document.positionAt(cm.index + cm[0].length)));
+        }
+        // 数字
+        const numRe = /\b\d+(\.\d+)?\b/g;
+        let nm;
+        while ((nm = numRe.exec(text)) !== null) {
+            if (isInString(nm.index))
+                continue;
+            numRanges.push(new vscode.Range(editor.document.positionAt(nm.index), editor.document.positionAt(nm.index + nm[0].length)));
+        }
+        // 关键字
+        for (const kw of keywords) {
+            const re = new RegExp('\\b' + kw + '\\b', 'g');
+            let m;
+            while ((m = re.exec(text)) !== null) {
+                if (isInString(m.index))
                     continue;
-                push(line, m2.index, name.length, 0, 0);
+                kwRanges.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
             }
         }
-        const result = new vscode.SemanticTokens(new Uint32Array(data));
-        console.log(`HKS: 生成了 ${data.length / 5} 个语义token`);
-        return result;
+        // 类型
+        for (const t of typeNames) {
+            const re = new RegExp('\\b' + t + '\\b', 'g');
+            let m;
+            while ((m = re.exec(text)) !== null) {
+                if (isInString(m.index))
+                    continue;
+                typeRanges.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
+            }
+        }
+        // 内置函数
+        for (const fn of builtins) {
+            const re = new RegExp('\\b' + fn + '\\b', 'g');
+            let m;
+            while ((m = re.exec(text)) !== null) {
+                if (isInString(m.index))
+                    continue;
+                funcRanges.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
+            }
+        }
+        // 函数调用: word + '('
+        const callRe = /\b([a-zA-Z_]\w*)\s*\(/g;
+        let m2;
+        while ((m2 = callRe.exec(text)) !== null) {
+            const name = m2[1];
+            if (keywords.includes(name) || typeNames.includes(name) || builtins.includes(name))
+                continue;
+            if (isInString(m2.index))
+                continue;
+            funcRanges.push(new vscode.Range(editor.document.positionAt(m2.index), editor.document.positionAt(m2.index + name.length)));
+        }
+        editor.setDecorations(decKeyword, kwRanges);
+        editor.setDecorations(decType, typeRanges);
+        editor.setDecorations(decFunc, funcRanges);
+        editor.setDecorations(decComment, commentRanges);
+        editor.setDecorations(decString, stringRanges);
+        editor.setDecorations(decNumber, numRanges);
     }
+    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(update), vscode.workspace.onDidChangeTextDocument(e => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor && e.document === editor.document)
+            update(editor);
+    }));
+    // 初始更新
+    if (vscode.window.activeTextEditor)
+        update(vscode.window.activeTextEditor);
 }
 //# sourceMappingURL=extension.js.map
