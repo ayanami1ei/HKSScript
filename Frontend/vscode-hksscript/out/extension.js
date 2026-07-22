@@ -22,6 +22,7 @@ function activate(context) {
         console.log('HKS: lang=' + editor.document.languageId);
         if (editor.document.languageId !== 'hkscript')
             return;
+        console.log('HKS: starting highlight');
         const text = editor.document.getText();
         const posAt = (offset) => editor.document.positionAt(offset);
         const kw = [];

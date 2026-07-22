@@ -21,8 +21,10 @@ export function activate(context: vscode.ExtensionContext) {
         if (!editor) return;
         console.log('HKS: lang=' + editor.document.languageId);
         if (editor.document.languageId !== 'hkscript') return;
+        console.log('HKS: starting highlight');
 
         const text = editor.document.getText();
+
         const posAt = (offset: number) => editor.document.positionAt(offset);
         const kw: vscode.Range[] = [];
         const tp: vscode.Range[] = [];
