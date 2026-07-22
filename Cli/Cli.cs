@@ -34,6 +34,7 @@ public class Cli
         {
             case "list":          ListFunctions();       break;
             case "check":         CheckFile(args[1]);    break;
+            case "diagnose":      DiagnoseFile(args[1]); break;
             case "run":           RunFile(args[1]);      break;
             case "code-present":  CodePresent(args[1]);  break;
             default:              PrintHelp();           break;
@@ -131,6 +132,34 @@ public class Cli
                 return i + 1;
         }
         return -1;
+    }
+
+    // ─── diagnose 命令（JSON 格式错误）───
+
+    private void DiagnoseFile(string path)
+    {
+        var (ast, tree) = BuildAst(path);
+        var errors = new List<object>();
+        var lines = File.ReadAllText(path).Split('\n');
+
+        if (ast != null)
+        {
+            var checker = new TypeChecker.TypeChecker();
+            var result = checker.Check(ast);
+
+            foreach (var err in result.Errors)
+            {
+                int line = FindErrorLine(err.Message, tree, lines);
+                errors.Add(new
+                {
+                    message = err.Message,
+                    line = line > 0 ? line : 1,
+                    column = 0
+                });
+            }
+        }
+
+        Console.WriteLine(JsonSerializer.Serialize(errors));
     }
 
     // ─── run 命令 ───
