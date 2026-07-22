@@ -24,6 +24,7 @@ public class Cli
     public Cli()
     {
         BuiltinRegistry.RegisterBuiltins(funcTable);
+        ModuleInit.RegisterAll(funcTable);
     }
 
     public void Run(string[] args)

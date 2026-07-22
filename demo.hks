@@ -1,5 +1,6 @@
-# HksScript Demo — 基础功能测试
+# HksScript Demo
 
 imread("./test.png")
     =>gray()
     =>imwrite("./grap.png")
+print("done")

@@ -1,5 +1,5 @@
 using HksScript.Interpreter;
-using System.Collections;
+using OpenCvSharp;
 
 namespace HksScript.Cli;
 
@@ -7,34 +7,28 @@ public static class BuiltinRegistry
 {
     public static void RegisterBuiltins(FunctionTable table)
     {
-        // 图像 IO（简化实现，不依赖 OpenCvSharp）
+        // 图像 IO
         table.Register("load", new ExternalFunction("load",
-            args => $"[Mat: {args[0]}]"));
+            args => Cv2.ImRead((string)args[0]!)));
         table.Register("imread", new ExternalFunction("imread",
-            args => $"[Mat from {args[0]}]"));
-        table.Register("save", new ExternalFunction("save",
-            args => { Console.WriteLine($"save: {args[1]}"); return null; }));
+            args => Cv2.ImRead((string)args[0]!)));
         table.Register("imwrite", new ExternalFunction("imwrite",
-            args => { Console.WriteLine($"imwrite: {args[0]} -> {args[1]}"); return null; }));
+            args => { Cv2.ImWrite((string)args[0]!, (Mat)args[1]!); return null; }));
+        table.Register("save", new ExternalFunction("save",
+            args => { Cv2.ImWrite((string)args[1]!, (Mat)args[0]!); return null; }));
 
         // 打印
         table.Register("print", new ExternalFunction("print",
             args => { Console.WriteLine(args[0]?.ToString()); return null; }));
 
-        // 图像处理（简化）
-        table.Register("gray", new ExternalFunction("gray",
-            args => $"[gray of {args[0]}]"));
-        table.Register("gaussian_blur", new ExternalFunction("gaussian_blur",
-            args => new List<string> { "circle_1", "circle_2" }));
-
         // 集合查询
         table.Register("query", new ExternalFunction("query",
-            args => args[0]));  // 简化
+            args => args[0]));
         table.Register("range", new ExternalFunction("range",
             args => Enumerable.Range(0, (int)args[0]!).ToList()));
         table.Register("len", new ExternalFunction("len",
             args => args[0] is ScriptSet s ? s.Len
-                  : args[0] is ICollection c ? c.Count
+                  : args[0] is System.Collections.ICollection c ? c.Count
                   : 0));
 
         // 算术
