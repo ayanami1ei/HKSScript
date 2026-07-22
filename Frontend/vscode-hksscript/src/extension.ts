@@ -107,6 +107,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(update),
         vscode.workspace.onDidSaveTextDocument(doc => {
+            console.log('HKS: ANY save: ' + doc.languageId + ' ' + doc.uri.fsPath);
             if (doc.languageId === 'hkscript') {
                 console.log('HKS: saved ' + doc.uri.fsPath);
                 setTimeout(() => {
