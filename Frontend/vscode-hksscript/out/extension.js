@@ -123,7 +123,7 @@ function activate(context) {
     }));
     // ─── 类型提示 ───
     console.log('HKS: registering hover');
-    context.subscriptions.push(vscode.languages.registerHoverProvider({ language: 'hkscript' }, {
+    context.subscriptions.push(vscode.languages.registerHoverProvider({ scheme: 'file', pattern: '**/*.hks' }, {
         provideHover(document, position) {
             console.log('HKS: hover at ' + document.languageId + ' ' + position.line + ',' + position.character);
             const info = getHint(document.uri.fsPath, position);
