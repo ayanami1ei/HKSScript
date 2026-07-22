@@ -1,7 +1,7 @@
 {
   "name": "hksscript",
-  "displayName": "HksScript",
-  "description": "HksScript language support: syntax highlighting and basic syntax checking",
+  "displayName": "HKS Script",
+  "description": "HKS Script language support: syntax highlighting and basic syntax checking",
   "version": "0.1.0",
   "publisher": "hksscript",
   "engines": {
@@ -20,7 +20,7 @@
       {
         "id": "hksscript",
         "aliases": [
-          "HksScript",
+          "HKS Script",
           "hksscript"
         ],
         "extensions": [
@@ -38,7 +38,7 @@
       }
     ],
     "configuration": {
-      "title": "HksScript",
+      "title": "HKS Script",
       "properties": {
         "hksscript.compilerPath": {
           "type": "string",
