@@ -38,14 +38,15 @@ export function activate(context: vscode.ExtensionContext) {
         if (!editor) return;
         console.log('HKS: update lang=' + editor.document.languageId);
         if (editor.document.languageId !== 'hkscript') return;
-        highlight(editor);
+        console.log('HKS: about to call highlight');
+        doHighlight(editor);
     };
 
     context.subscriptions.push(
         vscode.window.onDidChangeActiveTextEditor(update),
         vscode.workspace.onDidChangeTextDocument(e => {
             if (vscode.window.activeTextEditor?.document === e.document)
-                highlight(vscode.window.activeTextEditor);
+                doHighlight(vscode.window.activeTextEditor);
         })
     );
     console.log('HKS: listeners registered');
@@ -57,8 +58,8 @@ export function activate(context: vscode.ExtensionContext) {
     }, 1000);
 }
 
-function highlight(editor: vscode.TextEditor) {
-    console.log('HKS: highlight start');
+function doHighlight(editor: vscode.TextEditor) {
+    console.log('HKS: doHighlight start');
     const text = editor.document.getText();
     console.log('HKS: text length=' + text.length);
     const kw: vscode.Range[] = [];
