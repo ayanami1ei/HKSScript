@@ -10,3 +10,5 @@ Frontend/Grammar/*.tokens
 .VSCodeCounter/
 **/**.hksFrontend/vscode-hksscript/node_modules/
 Frontend/vscode-hksscript/*.vsix
+_pkg/
+release/
