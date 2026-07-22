@@ -121,6 +121,33 @@ function activate(context) {
         if (vscode.window.activeTextEditor?.document === e.document)
             update(vscode.window.activeTextEditor);
     }));
+    // ─── 类型提示 ───
+    context.subscriptions.push(vscode.languages.registerHoverProvider({ language: 'hkscript' }, {
+        provideHover(document, position) {
+            const info = getHint(document.uri.fsPath, position);
+            if (!info || info.kind === '?')
+                return null;
+            return new vscode.Hover(`**${info.name}**  \`${info.type}\`  \n${info.kind}`);
+        }
+    }));
+    // ─── 函数参数提示 ───
+    context.subscriptions.push(vscode.languages.registerSignatureHelpProvider({ language: 'hkscript' }, {
+        provideSignatureHelp(document, position) {
+            // 往前找函数调用
+            const textBefore = document.getText(new vscode.Range(new vscode.Position(position.line, 0), position));
+            const callMatch = textBefore.match(/(\w+)\s*\([^)]*$/);
+            if (!callMatch)
+                return null;
+            const info = getHint(document.uri.fsPath, position);
+            if (!info || info.kind !== 'function')
+                return null;
+            const help = new vscode.SignatureHelp();
+            help.signatures = [new vscode.SignatureInformation(`${info.name}(${info.type.match(/\((.*)\)/)?.[1] || ''})`, info.type)];
+            help.activeSignature = 0;
+            help.activeParameter = 0;
+            return help;
+        }
+    }, '(', ','));
     setTimeout(() => {
         console.log('HKS: timeout');
         const ed = vscode.window.activeTextEditor;
@@ -180,6 +207,43 @@ function activate(context) {
         }
         catch { }
         return null;
+    }
+    function getHint(filePath, pos) {
+        try {
+            const config = vscode.workspace.getConfiguration('hkscript');
+            const compilerPath = config.get('compilerPath') || '';
+            let cmd;
+            let args;
+            const opts = { timeout: 15000, encoding: 'utf-8' };
+            if (compilerPath) {
+                if (compilerPath.endsWith('.dll')) {
+                    cmd = 'dotnet';
+                    args = [compilerPath, 'hint', filePath, String(pos.line + 1), String(pos.character)];
+                }
+                else {
+                    cmd = compilerPath;
+                    args = ['hint', filePath, String(pos.line + 1), String(pos.character)];
+                }
+            }
+            else {
+                const root = findProjectRoot(filePath);
+                if (!root)
+                    return null;
+                cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
+                args = ['run', '--', 'hint', filePath, String(pos.line + 1), String(pos.character)];
+                opts.cwd = root;
+            }
+            const result = cp.spawnSync(cmd, args, opts);
+            if (result.status !== 0)
+                return null;
+            const data = JSON.parse(result.stdout);
+            if (!data || data.kind === '?')
+                return null;
+            return data;
+        }
+        catch {
+            return null;
+        }
     }
     function runDiagnose(filePath, collection) {
         try {

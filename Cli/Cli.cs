@@ -37,6 +37,7 @@ public class Cli
             case "diagnose":      DiagnoseFile(args[1]); break;
             case "run":           RunFile(args[1]);      break;
             case "code-present":  CodePresent(args[1]);  break;
+            case "hint":          HintFile(args[1], int.Parse(args[2]), int.Parse(args[3])); break;
             default:              PrintHelp();           break;
         }
     }
@@ -228,7 +229,50 @@ public class Cli
         Console.WriteLine($"{Green}执行完成{Reset}");
     }
 
-    // ─── code-present ───
+    // ─── hint 命令 ───
+
+    private void HintFile(string path, int line, int col)
+    {
+        var (ast, tree) = BuildAst(path);
+        if (ast == null) return;
+
+        var checker = new TypeChecker.TypeChecker();
+        checker.Check(ast);
+
+        // 在 ANTLR 树中查找指定位置的标识符
+        var symbol = FindSymbolAtPosition(tree, line, col);
+        if (symbol == null) { Console.WriteLine("null"); return; }
+
+        var info = new { name = symbol, kind = "", type = "" };
+        var type = checker.ResolveType(symbol) ?? checker.ResolveFuncType(symbol);
+        var kind = checker.ResolveFuncType(symbol) != null ? "function" : "variable";
+
+        Console.WriteLine(JsonSerializer.Serialize(new { name = symbol, kind, type = type ?? "?" }));
+    }
+
+    private static string? FindSymbolAtPosition(HksScriptParser.ProgramContext? tree, int line, int col)
+    {
+        if (tree == null) return null;
+        var stack = new Stack<ParserRuleContext>();
+        stack.Push(tree);
+        while (stack.Count > 0)
+        {
+            var ctx = stack.Pop();
+            foreach (var child in ctx.children)
+            {
+                if (child is Antlr4.Runtime.Tree.ITerminalNode term)
+                {
+                    var t = term.Symbol;
+                    if (t.Type == HksScriptLexer.ID && t.Line == line &&
+                        t.Column <= col && col < t.Column + t.Text.Length)
+                        return t.Text;
+                }
+                if (child is ParserRuleContext childCtx)
+                    stack.Push(childCtx);
+            }
+        }
+        return null;
+    }
 
     private void CodePresent(string path)
     {
