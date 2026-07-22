@@ -24,8 +24,10 @@ function activate(context) {
     item.show();
     context.subscriptions.push(item);
     function update(editor) {
-        if (!editor)
+        if (!editor) {
+            console.log('HKS: no editor');
             return;
+        }
         const text = editor.document.getText();
         const kwR = [];
         const tpR = [];

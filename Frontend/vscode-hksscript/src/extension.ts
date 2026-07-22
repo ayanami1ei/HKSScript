@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(item);
 
     function update(editor: vscode.TextEditor | undefined) {
-        if (!editor) return;
+        if (!editor) { console.log('HKS: no editor'); return; }
         const text = editor.document.getText();
         const kwR: vscode.Range[] = [];
         const tpR: vscode.Range[] = [];
