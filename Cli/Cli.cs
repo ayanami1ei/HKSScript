@@ -140,26 +140,61 @@ public class Cli
     {
         var (ast, tree) = BuildAst(path);
         var errors = new List<object>();
-        var lines = File.ReadAllText(path).Split('\n');
 
         if (ast != null)
         {
             var checker = new TypeChecker.TypeChecker();
             var result = checker.Check(ast);
 
+            // 遍历 ANTLR 树，收集所有标识符的位置
+            var idPositions = new Dictionary<string, (int line, int col)>();
+            if (tree != null)
+            {
+                var walker = new ParseTreeWalker();
+                walker.Walk(new IdPositionListener(idPositions), tree);
+            }
+
             foreach (var err in result.Errors)
             {
-                int line = FindErrorLine(err.Message, tree, lines);
-                errors.Add(new
+                int line = 1;
+                // 从错误消息提取变量名
+                foreach (var prefix in new[] { "未定义的变量: ", "未定义的函数: " })
                 {
-                    message = err.Message,
-                    line = line > 0 ? line : 1,
-                    column = 0
-                });
+                    if (err.Message.StartsWith(prefix))
+                    {
+                        var name = err.Message[prefix.Length..].Trim();
+                        if (idPositions.TryGetValue(name, out var pos))
+                            line = pos.line;
+                        break;
+                    }
+                }
+                errors.Add(new { message = err.Message, line, column = 0 });
             }
         }
 
         Console.WriteLine(JsonSerializer.Serialize(errors));
+    }
+
+    class IdPositionListener : HksScriptBaseListener
+    {
+        private readonly Dictionary<string, (int line, int col)> _positions;
+        public IdPositionListener(Dictionary<string, (int line, int col)> positions) => _positions = positions;
+
+        public override void EnterVarExpr(HksScriptParser.VarExprContext ctx)
+        {
+            var id = ctx.ID();
+            var name = id.GetText();
+            if (!string.IsNullOrEmpty(name) && !_positions.ContainsKey(name))
+                _positions[name] = (id.Symbol.Line, id.Symbol.Column);
+        }
+
+        public override void EnterCallExpr(HksScriptParser.CallExprContext ctx)
+        {
+            var id = ctx.ID();
+            var name = id.GetText();
+            if (!string.IsNullOrEmpty(name) && !_positions.ContainsKey(name))
+                _positions[name] = (id.Symbol.Line, id.Symbol.Column);
+        }
     }
 
     // ─── run 命令 ───
