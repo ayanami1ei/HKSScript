@@ -37,22 +37,37 @@ export function activate(context: vscode.ExtensionContext) {
 
         let m: RegExpExecArray | null;
 
-        while ((m = /"(\\.|[^"\\])*"/g.exec(text)) !== null)
+        const strRe = /"(\\.|[^"\\])*"/g;
+        while ((m = strRe.exec(text)) !== null)
             stR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-        while ((m = /#[^\n]*/g.exec(text)) !== null)
+        const comRe = /#[^\n]*/g;
+        while ((m = comRe.exec(text)) !== null)
             coR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-        while ((m = /\b\d+(\.\d+)?\b/g.exec(text)) !== null)
+        const numRe = /\b\d+(\.\d+)?\b/g;
+        while ((m = numRe.exec(text)) !== null)
             nuR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-        for (const w of ['import','def','if','elif','else','return','query','from','with','and','or','not','true','false'])
-            while ((m = new RegExp('\\b' + w + '\\b', 'g').exec(text)) !== null)
+
+        // keywords
+        for (const w of ['import','def','if','elif','else','return','query','from','with','and','or','not','true','false']) {
+            const re = new RegExp('\\b' + w + '\\b', 'g');
+            while ((m = re.exec(text)) !== null)
                 kwR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-        for (const w of ['int','float','string','bool','Mat','Set','Circle','Range','void'])
-            while ((m = new RegExp('\\b' + w + '\\b', 'g').exec(text)) !== null)
+        }
+        // types
+        for (const w of ['int','float','string','bool','Mat','Set','Circle','Range','void']) {
+            const re = new RegExp('\\b' + w + '\\b', 'g');
+            while ((m = re.exec(text)) !== null)
                 tpR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-        for (const w of ['load','save','print','len','range'])
-            while ((m = new RegExp('\\b' + w + '\\b', 'g').exec(text)) !== null)
+        }
+        // functions
+        for (const w of ['load','save','print','len','range']) {
+            const re = new RegExp('\\b' + w + '\\b', 'g');
+            while ((m = re.exec(text)) !== null)
                 fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[0].length)));
-        while ((m = /\b([a-zA-Z_]\w*)\s*\(/g.exec(text)) !== null)
+        }
+        // function calls: word + (
+        const callRe = /\b([a-zA-Z_]\w*)\s*\(/g;
+        while ((m = callRe.exec(text)) !== null)
             fnR.push(new vscode.Range(editor.document.positionAt(m.index), editor.document.positionAt(m.index + m[1].length)));
 
         editor.setDecorations(kwDec, kwR);
