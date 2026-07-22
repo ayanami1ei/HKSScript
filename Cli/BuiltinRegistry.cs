@@ -10,6 +10,8 @@ public static class BuiltinRegistry
         // 图像 IO（简化实现，不依赖 OpenCvSharp）
         table.Register("load", new ExternalFunction("load",
             args => $"[Mat: {args[0]}]"));
+        table.Register("imread", new ExternalFunction("imread",
+            args => $"[Mat from {args[0]}]"));
         table.Register("save", new ExternalFunction("save",
             args => { Console.WriteLine($"save: {args[1]}"); return null; }));
         table.Register("imwrite", new ExternalFunction("imwrite",
