@@ -55,7 +55,7 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// <return>The visitor result.</return>
 	public virtual Result VisitStatement([NotNull] HksScriptParser.StatementContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="HksScriptParser.letStmt"/>.
+	/// Visit a parse tree produced by <see cref="HksScriptParser.block"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -63,9 +63,9 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitLetStmt([NotNull] HksScriptParser.LetStmtContext context) { return VisitChildren(context); }
+	public virtual Result VisitBlock([NotNull] HksScriptParser.BlockContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="HksScriptParser.type_"/>.
+	/// Visit a parse tree produced by <see cref="HksScriptParser.importStmt"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -73,7 +73,17 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitType_([NotNull] HksScriptParser.Type_Context context) { return VisitChildren(context); }
+	public virtual Result VisitImportStmt([NotNull] HksScriptParser.ImportStmtContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="HksScriptParser.assignStmt"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitAssignStmt([NotNull] HksScriptParser.AssignStmtContext context) { return VisitChildren(context); }
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="HksScriptParser.exprStmt"/>.
 	/// <para>
@@ -85,8 +95,7 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// <return>The visitor result.</return>
 	public virtual Result VisitExprStmt([NotNull] HksScriptParser.ExprStmtContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by the <c>loadExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="HksScriptParser.ifStmt"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -94,10 +103,9 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitLoadExpr([NotNull] HksScriptParser.LoadExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitIfStmt([NotNull] HksScriptParser.IfStmtContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by the <c>varExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="HksScriptParser.funcDef"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -105,10 +113,9 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitVarExpr([NotNull] HksScriptParser.VarExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitFuncDef([NotNull] HksScriptParser.FuncDefContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by the <c>methodCallExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// Visit a parse tree produced by <see cref="HksScriptParser.paramList"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
 	/// on <paramref name="context"/>.
@@ -116,7 +123,27 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitMethodCallExpr([NotNull] HksScriptParser.MethodCallExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitParamList([NotNull] HksScriptParser.ParamListContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="HksScriptParser.param"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitParam([NotNull] HksScriptParser.ParamContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="HksScriptParser.type_"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitType_([NotNull] HksScriptParser.Type_Context context) { return VisitChildren(context); }
 	/// <summary>
 	/// Visit a parse tree produced by the <c>pipeExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
@@ -129,7 +156,7 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// <return>The visitor result.</return>
 	public virtual Result VisitPipeExpr([NotNull] HksScriptParser.PipeExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by the <c>unaryExpr</c>
+	/// Visit a parse tree produced by the <c>intersectExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
@@ -138,7 +165,62 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitUnaryExpr([NotNull] HksScriptParser.UnaryExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitIntersectExpr([NotNull] HksScriptParser.IntersectExprContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by the <c>orExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitOrExpr([NotNull] HksScriptParser.OrExprContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by the <c>unionExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitUnionExpr([NotNull] HksScriptParser.UnionExprContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by the <c>parenExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitParenExpr([NotNull] HksScriptParser.ParenExprContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by the <c>varExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitVarExpr([NotNull] HksScriptParser.VarExprContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by the <c>notExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitNotExpr([NotNull] HksScriptParser.NotExprContext context) { return VisitChildren(context); }
 	/// <summary>
 	/// Visit a parse tree produced by the <c>addExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
@@ -150,6 +232,17 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	public virtual Result VisitAddExpr([NotNull] HksScriptParser.AddExprContext context) { return VisitChildren(context); }
+	/// <summary>
+	/// Visit a parse tree produced by the <c>queryFromExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitQueryFromExpr([NotNull] HksScriptParser.QueryFromExprContext context) { return VisitChildren(context); }
 	/// <summary>
 	/// Visit a parse tree produced by the <c>literalExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
@@ -184,17 +277,6 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// <return>The visitor result.</return>
 	public virtual Result VisitMulExpr([NotNull] HksScriptParser.MulExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by the <c>queryExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
-	/// <para>
-	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
-	/// on <paramref name="context"/>.
-	/// </para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	public virtual Result VisitQueryExpr([NotNull] HksScriptParser.QueryExprContext context) { return VisitChildren(context); }
-	/// <summary>
 	/// Visit a parse tree produced by the <c>callExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// <para>
@@ -206,7 +288,7 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// <return>The visitor result.</return>
 	public virtual Result VisitCallExpr([NotNull] HksScriptParser.CallExprContext context) { return VisitChildren(context); }
 	/// <summary>
-	/// Visit a parse tree produced by the <c>parenExpr</c>
+	/// Visit a parse tree produced by the <c>andExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// <para>
 	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
@@ -215,7 +297,7 @@ public partial class HksScriptBaseVisitor<Result> : AbstractParseTreeVisitor<Res
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	public virtual Result VisitParenExpr([NotNull] HksScriptParser.ParenExprContext context) { return VisitChildren(context); }
+	public virtual Result VisitAndExpr([NotNull] HksScriptParser.AndExprContext context) { return VisitChildren(context); }
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="HksScriptParser.condition"/>.
 	/// <para>

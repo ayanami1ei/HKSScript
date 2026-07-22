@@ -51,25 +51,35 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitStatement([NotNull] HksScriptParser.StatementContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="HksScriptParser.letStmt"/>.
+	/// Enter a parse tree produced by <see cref="HksScriptParser.block"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterLetStmt([NotNull] HksScriptParser.LetStmtContext context);
+	void EnterBlock([NotNull] HksScriptParser.BlockContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="HksScriptParser.letStmt"/>.
+	/// Exit a parse tree produced by <see cref="HksScriptParser.block"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitLetStmt([NotNull] HksScriptParser.LetStmtContext context);
+	void ExitBlock([NotNull] HksScriptParser.BlockContext context);
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="HksScriptParser.type_"/>.
+	/// Enter a parse tree produced by <see cref="HksScriptParser.importStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterType_([NotNull] HksScriptParser.Type_Context context);
+	void EnterImportStmt([NotNull] HksScriptParser.ImportStmtContext context);
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="HksScriptParser.type_"/>.
+	/// Exit a parse tree produced by <see cref="HksScriptParser.importStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitType_([NotNull] HksScriptParser.Type_Context context);
+	void ExitImportStmt([NotNull] HksScriptParser.ImportStmtContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="HksScriptParser.assignStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterAssignStmt([NotNull] HksScriptParser.AssignStmtContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="HksScriptParser.assignStmt"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitAssignStmt([NotNull] HksScriptParser.AssignStmtContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="HksScriptParser.exprStmt"/>.
 	/// </summary>
@@ -81,41 +91,55 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitExprStmt([NotNull] HksScriptParser.ExprStmtContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>loadExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="HksScriptParser.ifStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterLoadExpr([NotNull] HksScriptParser.LoadExprContext context);
+	void EnterIfStmt([NotNull] HksScriptParser.IfStmtContext context);
 	/// <summary>
-	/// Exit a parse tree produced by the <c>loadExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="HksScriptParser.ifStmt"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitLoadExpr([NotNull] HksScriptParser.LoadExprContext context);
+	void ExitIfStmt([NotNull] HksScriptParser.IfStmtContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>varExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="HksScriptParser.funcDef"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterVarExpr([NotNull] HksScriptParser.VarExprContext context);
+	void EnterFuncDef([NotNull] HksScriptParser.FuncDefContext context);
 	/// <summary>
-	/// Exit a parse tree produced by the <c>varExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="HksScriptParser.funcDef"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitVarExpr([NotNull] HksScriptParser.VarExprContext context);
+	void ExitFuncDef([NotNull] HksScriptParser.FuncDefContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>methodCallExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// Enter a parse tree produced by <see cref="HksScriptParser.paramList"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterMethodCallExpr([NotNull] HksScriptParser.MethodCallExprContext context);
+	void EnterParamList([NotNull] HksScriptParser.ParamListContext context);
 	/// <summary>
-	/// Exit a parse tree produced by the <c>methodCallExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// Exit a parse tree produced by <see cref="HksScriptParser.paramList"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitMethodCallExpr([NotNull] HksScriptParser.MethodCallExprContext context);
+	void ExitParamList([NotNull] HksScriptParser.ParamListContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="HksScriptParser.param"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterParam([NotNull] HksScriptParser.ParamContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="HksScriptParser.param"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitParam([NotNull] HksScriptParser.ParamContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="HksScriptParser.type_"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterType_([NotNull] HksScriptParser.Type_Context context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="HksScriptParser.type_"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitType_([NotNull] HksScriptParser.Type_Context context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>pipeExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
@@ -129,17 +153,77 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitPipeExpr([NotNull] HksScriptParser.PipeExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>unaryExpr</c>
+	/// Enter a parse tree produced by the <c>intersectExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterUnaryExpr([NotNull] HksScriptParser.UnaryExprContext context);
+	void EnterIntersectExpr([NotNull] HksScriptParser.IntersectExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by the <c>unaryExpr</c>
+	/// Exit a parse tree produced by the <c>intersectExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitUnaryExpr([NotNull] HksScriptParser.UnaryExprContext context);
+	void ExitIntersectExpr([NotNull] HksScriptParser.IntersectExprContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>orExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterOrExpr([NotNull] HksScriptParser.OrExprContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>orExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitOrExpr([NotNull] HksScriptParser.OrExprContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>unionExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterUnionExpr([NotNull] HksScriptParser.UnionExprContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>unionExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitUnionExpr([NotNull] HksScriptParser.UnionExprContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>parenExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterParenExpr([NotNull] HksScriptParser.ParenExprContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>parenExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitParenExpr([NotNull] HksScriptParser.ParenExprContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>varExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterVarExpr([NotNull] HksScriptParser.VarExprContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>varExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitVarExpr([NotNull] HksScriptParser.VarExprContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>notExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterNotExpr([NotNull] HksScriptParser.NotExprContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>notExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitNotExpr([NotNull] HksScriptParser.NotExprContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>addExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
@@ -152,6 +236,18 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitAddExpr([NotNull] HksScriptParser.AddExprContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>queryFromExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterQueryFromExpr([NotNull] HksScriptParser.QueryFromExprContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>queryFromExpr</c>
+	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitQueryFromExpr([NotNull] HksScriptParser.QueryFromExprContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>literalExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
@@ -189,18 +285,6 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitMulExpr([NotNull] HksScriptParser.MulExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>queryExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void EnterQueryExpr([NotNull] HksScriptParser.QueryExprContext context);
-	/// <summary>
-	/// Exit a parse tree produced by the <c>queryExpr</c>
-	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void ExitQueryExpr([NotNull] HksScriptParser.QueryExprContext context);
-	/// <summary>
 	/// Enter a parse tree produced by the <c>callExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// </summary>
@@ -213,17 +297,17 @@ public interface IHksScriptListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitCallExpr([NotNull] HksScriptParser.CallExprContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>parenExpr</c>
+	/// Enter a parse tree produced by the <c>andExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterParenExpr([NotNull] HksScriptParser.ParenExprContext context);
+	void EnterAndExpr([NotNull] HksScriptParser.AndExprContext context);
 	/// <summary>
-	/// Exit a parse tree produced by the <c>parenExpr</c>
+	/// Exit a parse tree produced by the <c>andExpr</c>
 	/// labeled alternative in <see cref="HksScriptParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitParenExpr([NotNull] HksScriptParser.ParenExprContext context);
+	void ExitAndExpr([NotNull] HksScriptParser.AndExprContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="HksScriptParser.condition"/>.
 	/// </summary>
