@@ -118,8 +118,14 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
     setTimeout(() => {
+        console.log('HKS: timeout');
         const ed = vscode.window.activeTextEditor;
-        if (ed) { update(ed); runDiagnose(ed.document.uri.fsPath, diagnostic); }
+        console.log('HKS: editor=' + (ed ? ed.document.uri.fsPath : 'none'));
+        if (ed) {
+            update(ed);
+            try { runDiagnose(ed.document.uri.fsPath, diagnostic); }
+            catch (e) { console.log('HKS: diagnose error: ' + e); }
+        }
     }, 500);
 
     interface SymbolInfo {
@@ -183,9 +189,17 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             const result = cp.spawnSync(cmd, args, opts);
-            if (result.status !== 0) return;
+            if (result.status !== 0) {
+                console.log('HKS: diagnose exit=' + result.status + ' stderr=' + (result.stderr || '').substring(0, 200));
+                return;
+            }
 
             const errors: any[] = JSON.parse(result.stdout);
+            if (!errors || errors.length === 0) {
+                collection.set(vscode.Uri.file(filePath), []);
+                return;
+            }
+
             const uri = vscode.Uri.file(filePath);
             const diags: vscode.Diagnostic[] = [];
 
@@ -196,6 +210,9 @@ export function activate(context: vscode.ExtensionContext) {
             }
 
             collection.set(uri, diags);
-        } catch {}
+            console.log('HKS: diagnose set ' + diags.length + ' errors');
+        } catch (e) {
+            console.log('HKS: diagnose error: ' + String(e));
+        }
     }
 }

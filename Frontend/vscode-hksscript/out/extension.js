@@ -119,10 +119,17 @@ function activate(context) {
             update(vscode.window.activeTextEditor);
     }));
     setTimeout(() => {
+        console.log('HKS: timeout');
         const ed = vscode.window.activeTextEditor;
+        console.log('HKS: editor=' + (ed ? ed.document.uri.fsPath : 'none'));
         if (ed) {
             update(ed);
-            runDiagnose(ed.document.uri.fsPath, diagnostic);
+            try {
+                runDiagnose(ed.document.uri.fsPath, diagnostic);
+            }
+            catch (e) {
+                console.log('HKS: diagnose error: ' + e);
+            }
         }
     }, 500);
     function getSymbols(filePath) {
@@ -185,9 +192,15 @@ function activate(context) {
                 opts.cwd = root;
             }
             const result = cp.spawnSync(cmd, args, opts);
-            if (result.status !== 0)
+            if (result.status !== 0) {
+                console.log('HKS: diagnose exit=' + result.status + ' stderr=' + (result.stderr || '').substring(0, 200));
                 return;
+            }
             const errors = JSON.parse(result.stdout);
+            if (!errors || errors.length === 0) {
+                collection.set(vscode.Uri.file(filePath), []);
+                return;
+            }
             const uri = vscode.Uri.file(filePath);
             const diags = [];
             for (const err of errors) {
@@ -196,8 +209,11 @@ function activate(context) {
                 diags.push(new vscode.Diagnostic(range, err.message, vscode.DiagnosticSeverity.Error));
             }
             collection.set(uri, diags);
+            console.log('HKS: diagnose set ' + diags.length + ' errors');
         }
-        catch { }
+        catch (e) {
+            console.log('HKS: diagnose error: ' + String(e));
+        }
     }
 }
 //# sourceMappingURL=extension.js.map
