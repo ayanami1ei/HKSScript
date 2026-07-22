@@ -145,8 +145,13 @@ export function activate(context: vscode.ExtensionContext) {
             const opts: any = { timeout: 15000, encoding: 'utf-8' as const };
 
             if (compilerPath) {
-                cmd = 'dotnet';
-                args = [compilerPath, 'code-present', filePath];
+                if (compilerPath.endsWith('.dll')) {
+                    cmd = 'dotnet';
+                    args = [compilerPath, 'code-present', filePath];
+                } else {
+                    cmd = compilerPath;
+                    args = ['code-present', filePath];
+                }
             } else {
                 const root = findProjectRoot(filePath);
                 if (!root) return null;
@@ -181,8 +186,13 @@ export function activate(context: vscode.ExtensionContext) {
             const opts: any = { timeout: 15000, encoding: 'utf-8' as const };
 
             if (compilerPath) {
-                cmd = 'dotnet';
-                args = [compilerPath, 'diagnose', filePath];
+                if (compilerPath.endsWith('.dll')) {
+                    cmd = 'dotnet';
+                    args = [compilerPath, 'diagnose', filePath];
+                } else {
+                    cmd = compilerPath;
+                    args = ['diagnose', filePath];
+                }
             } else {
                 const root = findProjectRoot(filePath);
                 if (!root) return;
