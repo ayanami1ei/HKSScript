@@ -19,6 +19,9 @@ let stDec: vscode.TextEditorDecorationType;
 let nuDec: vscode.TextEditorDecorationType;
 
 export function activate(context: vscode.ExtensionContext) {
+    const diagnostic = vscode.languages.createDiagnosticCollection('hkscript');
+    context.subscriptions.push(diagnostic);
+
     kwDec = vscode.window.createTextEditorDecorationType(kwColor);
     tpDec = vscode.window.createTextEditorDecorationType(tpColor);
     fnDec = vscode.window.createTextEditorDecorationType(fnColor);
@@ -107,13 +110,17 @@ export function activate(context: vscode.ExtensionContext) {
             if (doc.languageId === 'hkscript') {
                 const ed = vscode.window.activeTextEditor;
                 if (ed?.document === doc) update(ed);
+                runDiagnose(doc.uri.fsPath, diagnostic);
             }
         }),
         vscode.workspace.onDidChangeTextDocument(e => {
             if (vscode.window.activeTextEditor?.document === e.document) update(vscode.window.activeTextEditor);
         })
     );
-    setTimeout(() => update(vscode.window.activeTextEditor), 500);
+    setTimeout(() => {
+        const ed = vscode.window.activeTextEditor;
+        if (ed) { update(ed); runDiagnose(ed.document.uri.fsPath, diagnostic); }
+    }, 500);
 
     interface SymbolInfo {
         name: string; kind: string; type: string;
@@ -154,5 +161,41 @@ export function activate(context: vscode.ExtensionContext) {
             }
         } catch {}
         return null;
+    }
+
+    function runDiagnose(filePath: string, collection: vscode.DiagnosticCollection) {
+        try {
+            const config = vscode.workspace.getConfiguration('hkscript');
+            const compilerPath = config.get<string>('compilerPath') || '';
+            let cmd: string;
+            let args: string[];
+            const opts: any = { timeout: 15000, encoding: 'utf-8' as const };
+
+            if (compilerPath) {
+                cmd = 'dotnet';
+                args = [compilerPath, 'diagnose', filePath];
+            } else {
+                const root = findProjectRoot(filePath);
+                if (!root) return;
+                cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
+                args = ['run', '--', 'diagnose', filePath];
+                opts.cwd = root;
+            }
+
+            const result = cp.spawnSync(cmd, args, opts);
+            if (result.status !== 0) return;
+
+            const errors: any[] = JSON.parse(result.stdout);
+            const uri = vscode.Uri.file(filePath);
+            const diags: vscode.Diagnostic[] = [];
+
+            for (const err of errors) {
+                const line = Math.max(0, (err.line || 1) - 1);
+                const range = new vscode.Range(line, 0, line, 1000);
+                diags.push(new vscode.Diagnostic(range, err.message, vscode.DiagnosticSeverity.Error));
+            }
+
+            collection.set(uri, diags);
+        } catch {}
     }
 }
