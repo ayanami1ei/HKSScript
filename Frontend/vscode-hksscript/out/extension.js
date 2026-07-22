@@ -2,12 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 const vscode = require("vscode");
-const keywordColor = { color: '#cba6f7', fontWeight: 'bold' };
-const typeColor = { color: '#a6e3a1' };
-const functionColor = { color: '#f9e2af' };
-const commentColor = { color: '#6c7086', fontStyle: 'italic' };
-const stringColor = { color: '#89b4fa' };
-const numberColor = { color: '#fab387' };
+const keywordColor = { backgroundColor: 'rgba(203,166,247,0.2)', fontWeight: 'bold' };
+const typeColor = { backgroundColor: 'rgba(166,227,161,0.2)' };
+const functionColor = { backgroundColor: 'rgba(249,226,175,0.2)' };
+const commentColor = { backgroundColor: 'rgba(108,112,134,0.2)', fontStyle: 'italic' };
+const stringColor = { backgroundColor: 'rgba(137,180,250,0.2)' };
+const numberColor = { backgroundColor: 'rgba(250,179,135,0.2)' };
 let decKeyword;
 let decType;
 let decFunc;
