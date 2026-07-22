@@ -109,10 +109,13 @@ function activate(context) {
     }
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(update), vscode.workspace.onDidSaveTextDocument(doc => {
         if (doc.languageId === 'hkscript') {
-            const ed = vscode.window.activeTextEditor;
-            if (ed?.document === doc)
-                update(ed);
-            runDiagnose(doc.uri.fsPath, diagnostic);
+            console.log('HKS: saved ' + doc.uri.fsPath);
+            setTimeout(() => {
+                runDiagnose(doc.uri.fsPath, diagnostic);
+                const ed = vscode.window.activeTextEditor;
+                if (ed?.document === doc)
+                    update(ed);
+            }, 200);
         }
     }), vscode.workspace.onDidChangeTextDocument(e => {
         if (vscode.window.activeTextEditor?.document === e.document)
