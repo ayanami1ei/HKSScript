@@ -1,9 +1,5 @@
 import * as vscode from 'vscode';
 
-const keywords = new Set(['import','def','if','elif','else','return','query','from','with','and','or','not','true','false']);
-const types    = new Set(['int','float','string','bool','Mat','Set','Circle','Range','void']);
-const builtins = new Set(['load','save','print','len','range']);
-
 export function activate(context: vscode.ExtensionContext) {
     const provider = new HkscriptSemanticTokensProvider();
     context.subscriptions.push(
@@ -18,51 +14,65 @@ export function activate(context: vscode.ExtensionContext) {
 class HkscriptSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
     readonly legend = new vscode.SemanticTokensLegend(
         ['function', 'variable', 'type', 'keyword'],
-        []
+        ['declaration', 'modification']
     );
 
     provideDocumentSemanticTokens(document: vscode.TextDocument): vscode.SemanticTokens {
-        const builder = new vscode.SemanticTokensBuilder(this.legend);
         const text = document.getText();
         const lines = text.split('\n');
+        const tokens: number[] = [];
+
+        let prevLine = 0;
+        let prevChar = 0;
+
+        function push(line: number, char: number, len: number, type: number, mod: number) {
+            tokens.push(line - prevLine);
+            tokens.push(line === prevLine ? char - prevChar : char);
+            tokens.push(len);
+            tokens.push(type);
+            tokens.push(mod);
+            prevLine = line;
+            prevChar = char;
+        }
 
         for (let line = 0; line < lines.length; line++) {
             const l = lines[line];
 
-            // 关键字
-            for (const kw of keywords) {
+            // keyword
+            for (const kw of ['import','def','if','elif','else','return','query','from','with','and','or','not','true','false']) {
                 const re = new RegExp('\\b' + kw + '\\b', 'g');
                 let m: RegExpExecArray | null;
                 while ((m = re.exec(l)) !== null)
-                    builder.push(line, m.index, m[0].length, 3, 0);
+                    push(line, m.index, m[0].length, 3, 0);
             }
 
-            // 类型
-            for (const t of types) {
+            // type
+            for (const t of ['int','float','string','bool','Mat','Set','Circle','Range','void']) {
                 const re = new RegExp('\\b' + t + '\\b', 'g');
                 let m: RegExpExecArray | null;
                 while ((m = re.exec(l)) !== null)
-                    builder.push(line, m.index, m[0].length, 2, 0);
+                    push(line, m.index, m[0].length, 2, 0);
             }
 
-            // 内置函数
-            for (const fn of builtins) {
+            // builtin function
+            for (const fn of ['load','save','print','len','range']) {
                 const re = new RegExp('\\b' + fn + '\\b', 'g');
                 let m: RegExpExecArray | null;
                 while ((m = re.exec(l)) !== null)
-                    builder.push(line, m.index, m[0].length, 0, 0);
+                    push(line, m.index, m[0].length, 0, 0);
             }
 
-            // 函数调用: ID + '('
+            // function call: ID + '('
             const callRe = /\b([a-zA-Z_]\w*)\s*\(/g;
             let m2: RegExpExecArray | null;
             while ((m2 = callRe.exec(l)) !== null) {
                 const name = m2[1];
-                if (keywords.has(name) || types.has(name) || builtins.has(name)) continue;
-                builder.push(line, m2.index, name.length, 0, 0);
+                if (['import','def','if','elif','else','return','query','from','with','and','or','not','true','false'].includes(name)) continue;
+                if (['int','float','string','bool','Mat','Set','Circle','Range','void'].includes(name)) continue;
+                push(line, m2.index, name.length, 0, 0);
             }
         }
 
-        return builder.build();
+        return new vscode.SemanticTokens(new Uint32Array(tokens));
     }
 }
