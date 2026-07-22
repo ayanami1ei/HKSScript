@@ -39,11 +39,16 @@
         }
       }
     },
-    "themes": [
+    "themes": [],
+    "semanticTokenScopes": [
       {
-        "label": "HKS Script",
-        "uiTheme": "vs-dark",
-        "path": "./themes/hkscript-color-theme.json"
+        "language": "hkscript",
+        "scopes": {
+          "function": ["entity.name.function"],
+          "variable": ["variable.other"],
+          "type": ["support.type"],
+          "keyword": ["keyword.control"]
+        }
       }
     ]
   },
