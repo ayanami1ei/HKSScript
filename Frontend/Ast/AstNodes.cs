@@ -58,4 +58,8 @@ public enum UnaryOp { Not }
 
 public record QueryFrom(Expr Collection, Expr Condition) : Expr();
 
-public record Pipe(Expr Left, Expr Right) : Expr();
+public record Pipe(Expr Left, Expr Right) : Expr
+{
+    // 类型推断后设置：pipe 结果应插入到函数参数的第几个位置（0-based）
+    public int PipeArgIndex { get; set; } = 0;
+}

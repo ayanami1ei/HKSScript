@@ -203,8 +203,14 @@ public class LoweringPass
 
         if (pipe.Right is AstNode.Call call)
         {
-            var allArgs = new List<int> { leftId };
-            allArgs.AddRange(call.Args.Select(a => LowerExpr(a, result)));
+            var allArgs = new List<int>();
+            for (int i = 0; i < call.Args.Count + 1; i++)
+            {
+                if (i == pipe.PipeArgIndex)
+                    allArgs.Add(leftId);
+                else
+                    allArgs.Add(LowerExpr(call.Args[i < pipe.PipeArgIndex ? i : i - 1], result));
+            }
             var id = NewId();
             result.Add(new HirNode.Call(id, call.Name, allArgs.ToArray()));
             return id;

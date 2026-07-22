@@ -1,18 +1,5 @@
 # HksScript Demo — 基础功能测试
 
-# 用户自定义函数
-def add(x: int, y: int) -> int:
-    return x + y
-
-def sub(x:int, y:int)->int:
-    return x-y
-
-a=1
-
-# pipe链式调用
-result = a
-    => add(2)
-    => add(3)
-
-# 外部函数调用
-print(result)
+imread("./test.png")
+    =>gray()
+    =>imwrite("./grap.png")

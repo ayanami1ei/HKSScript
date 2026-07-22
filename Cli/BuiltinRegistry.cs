@@ -12,13 +12,17 @@ public static class BuiltinRegistry
             args => $"[Mat: {args[0]}]"));
         table.Register("save", new ExternalFunction("save",
             args => { Console.WriteLine($"save: {args[1]}"); return null; }));
+        table.Register("imwrite", new ExternalFunction("imwrite",
+            args => { Console.WriteLine($"imwrite: {args[0]} -> {args[1]}"); return null; }));
 
         // 打印
         table.Register("print", new ExternalFunction("print",
             args => { Console.WriteLine(args[0]?.ToString()); return null; }));
 
-        // 算法（简化）
-        table.Register("find_circles", new ExternalFunction("find_circles",
+        // 图像处理（简化）
+        table.Register("gray", new ExternalFunction("gray",
+            args => $"[gray of {args[0]}]"));
+        table.Register("gaussian_blur", new ExternalFunction("gaussian_blur",
             args => new List<string> { "circle_1", "circle_2" }));
 
         // 集合查询

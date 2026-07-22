@@ -34,10 +34,10 @@ public static class ModuleInit
         table.Register("resize", new ExternalFunction("resize",
             args => BasicAlgo.Resize((Mat)args[0]!, (double)args[1]!)));
 
-        table.Register("imread", new ExternalFunction("imread",
+        table.Register("load", new ExternalFunction("imread",
             args => BasicAlgo.ImRead((string)args[0]!)));
 
-        table.Register("imwrite", new ExternalFunction("imwrite",
+        table.Register("save", new ExternalFunction("imwrite",
             args => { BasicAlgo.ImWrite((string)args[0]!, (Mat)args[1]!); return null; }));
 
         table.Register("__init_basic", new ExternalFunction("__init_basic",

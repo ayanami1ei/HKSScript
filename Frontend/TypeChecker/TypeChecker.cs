@@ -277,18 +277,41 @@ public class TypeChecker
 
     private TypeRef? InferPipe(Pipe pipe)
     {
-        // a => f(b) → 类型检查时模拟 lowering: f(左值类型, 右参数类型)
         if (pipe.Right is Call call)
         {
             var leftType = InferExpr(pipe.Left);
-            var argTypes = new List<TypeRef?> { leftType };
-            argTypes.AddRange(call.Args.Select(InferExpr));
-
             if (!functions.TryGetValue(call.Name, out var sigs))
             {
                 result.Error($"未定义的函数: {call.Name}", Line(call));
                 return null;
             }
+
+            // 找第一个类型匹配的参数位置
+            var leftTypeName = leftType?.Name ?? "?";
+            int insertAt = -1;
+            for (int i = 0; i < sigs[0].ParamTypes.Length; i++)
+            {
+                if (sigs[0].ParamTypes[i] == leftTypeName)
+                {
+                    insertAt = i;
+                    break;
+                }
+            }
+            if (insertAt < 0) insertAt = 0; // fallback: 插第一个
+
+            // 构建完整参数列表
+            var argTypes = new List<TypeRef?>();
+            for (int i = 0; i < sigs[0].ParamTypes.Length; i++)
+            {
+                if (i == insertAt)
+                    argTypes.Add(leftType);
+                else if (call.Args.Count > (i < insertAt ? i : i - 1))
+                    argTypes.Add(InferExpr(call.Args[i < insertAt ? i : i - 1]));
+                else
+                    argTypes.Add(null);
+            }
+
+            pipe.PipeArgIndex = insertAt;
 
             var argNames = argTypes.Select(t => t?.Name ?? "?").ToArray();
             var matched = sigs.FirstOrDefault(s =>
