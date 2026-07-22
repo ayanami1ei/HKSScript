@@ -11,7 +11,8 @@ export function activate(context: vscode.ExtensionContext) {
     function update(editor: vscode.TextEditor | undefined) {
         if (!editor) return;
         console.log('HKS: update, lang=' + editor.document.languageId);
-        const text = editor.document.getText();
+        try {
+            const text = editor.document.getText();
 
         const kwR: vscode.Range[] = [];
         const tpR: vscode.Range[] = [];
@@ -78,6 +79,9 @@ export function activate(context: vscode.ExtensionContext) {
             nuR
         );
         console.log('HKS: done');
+        } catch (e) {
+            console.log('HKS: ERROR: ' + String(e));
+        }
     }
 
     context.subscriptions.push(
