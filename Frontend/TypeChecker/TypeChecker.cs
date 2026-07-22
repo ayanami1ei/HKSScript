@@ -53,8 +53,8 @@ public class TypeChecker
         return null;
     }
 
-    private static int Line(Expr? e) => e?.Position?.Line ?? 0;
-    private static int Line(Stmt? s) => s?.Position?.Line ?? 0;
+    private static int Line(Expr? e) => e?.Position?.Line ?? -1;
+    private static int Line(Stmt? s) => s?.Position?.Line ?? -1;
 
     private void RegisterBuiltins()
     {
