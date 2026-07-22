@@ -13,3 +13,5 @@ Frontend/vscode-hksscript/*.vsix
 _pkg/
 release/
 *.png
+test.png
+*.png
