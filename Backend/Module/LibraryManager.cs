@@ -16,7 +16,17 @@ public class LibraryConfig
         var std = string.IsNullOrEmpty(StdPath) ? Path.Combine(exeDir, "lib", "std") : StdPath;
         var global = string.IsNullOrEmpty(GlobalPath) ? Path.Combine(exeDir, "lib") : GlobalPath;
         var proj = Path.GetFullPath(ProjectPath);
-        return [proj, global, std];
+        var paths = new List<string> { proj, global, std };
+
+        // HKS_PATH 环境变量: 分号/冒号分隔的额外搜索路径
+        var envPath = Environment.GetEnvironmentVariable("HKS_PATH");
+        if (!string.IsNullOrEmpty(envPath))
+        {
+            foreach (var p in envPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                paths.Add(Path.GetFullPath(p));
+        }
+
+        return paths.ToArray();
     }
 
     public static LibraryConfig Default => new();
