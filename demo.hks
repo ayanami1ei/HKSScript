@@ -1,5 +1,8 @@
 # HksScript Demo
 
+def add(m:int, n:int)->int:
+    return m+n
+
 m=load("./image.png")
 n=gray(m)
 save(n, "./gray1.png")
