@@ -19,5 +19,6 @@ HksScript.Sdk/bin/
 HksScript.Sdk/obj/
 tests/
 HKSScript_tests/
+run_csharp.sh
 test.png
 *.png
