@@ -131,6 +131,8 @@ function activate(context) {
             if (!map)
                 return hints;
             for (const sym of map) {
+                if (sym.kind !== 'variable')
+                    continue; // 只给变量显示类型
                 const line = sym.line - 1;
                 const col = sym.column + sym.length;
                 const hint = new vscode.InlayHint(new vscode.Position(line, col), `: ${sym.type}`, vscode.InlayHintKind.Type);
