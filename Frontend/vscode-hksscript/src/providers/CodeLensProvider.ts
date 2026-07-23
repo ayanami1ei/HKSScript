@@ -26,8 +26,10 @@ export function registerRunCommand(context: vscode.ExtensionContext, compiler: C
             term.show();
 
             if (compilerPath) {
-                const dotnetCmd = compilerPath.endsWith('.dll') ? `dotnet "${compilerPath}"` : `"${compilerPath}"`;
-                term.sendText(`${dotnetCmd} run "${target}"`);
+                if (compilerPath.endsWith('.dll'))
+                    term.sendText(`dotnet exec "${compilerPath}" run "${target}"`);
+                else
+                    term.sendText(`"${compilerPath}" run "${target}"`);
             } else {
                 term.sendText(`dotnet run -- run "${target}"`);
             }

@@ -30,23 +30,24 @@ export class CompilerClient {
         try {
             const compilerPath = this.getCompilerPath();
             const opts: any = { timeout: 15000, encoding: 'utf-8' as const };
-            let cmd: string;
+            let cmd: string = 'dotnet';
             let args: string[];
 
             if (compilerPath) {
-                if (compilerPath.endsWith('.dll')) {
-                    cmd = 'dotnet';
-                    args = [compilerPath, subCmd, filePath, ...rest];
-                } else {
-                    cmd = compilerPath;
+                if (compilerPath.endsWith('.dll'))
+                    args = ['exec', compilerPath, subCmd, filePath, ...rest];
+                else
                     args = [subCmd, filePath, ...rest];
-                }
             } else {
                 const root = this.findProjectRoot(filePath);
-                if (!root) return null;
-                cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
-                args = ['run', '--', subCmd, filePath, ...rest];
-                opts.cwd = root;
+                if (root) {
+                    args = ['run', '--', subCmd, filePath, ...rest];
+                    opts.cwd = root;
+                } else {
+                    // 尝试 PATH 中的 hks 命令
+                    cmd = 'hks';
+                    args = [subCmd, filePath, ...rest];
+                }
             }
 
             const result = cp.spawnSync(cmd, args, opts);
