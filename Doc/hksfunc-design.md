@@ -75,15 +75,68 @@ public class HksFuncAttribute : Attribute
 
 **类型映射**：
 
-| C# 类型 | 脚本类型 | 强转方式 |
-|---------|---------|---------|
-| `int` | `int` | `(int)args[i]!` |
-| `double` / `float` | `float` | `(double)args[i]!` |
-| `string` | `string` | `(string)args[i]!` |
-| `bool` | `bool` | `(bool)args[i]!` |
-| `Mat` | `Mat` | `(Mat)args[i]!` |
-| `List<Circle>` | `Set<Circle>` | `(List<Circle>)args[i]!` |
-| `void` 返回 | `void` | `return null;` |
+| C# 类型 | 脚本类型 | 强转方式 | 说明 |
+|---------|---------|---------|------|
+| `int` | `int` | `(int)args[i]!` | 基础 |
+| `double` / `float` | `float` | `(double)args[i]!` | 基础 |
+| `string` | `string` | `(string)args[i]!` | 基础 |
+| `bool` | `bool` | `(bool)args[i]!` | 基础 |
+| `Mat` | `Mat` | `(Mat)args[i]!` | 图像 |
+| `List<T>` | `Set<T>` | `(List<T>)args[i]!` | 集合 |
+| `void` 返回 | `void` | `return null;` | 无返回值 |
+| `[HksType]` 标记的类 | 自定义类型名 | 自动处理 | 用户自定义 |
+
+#### 自定义类型 [HksType]
+
+用户可能需要返回自己的结果类型，而不仅是引擎内置的类型。用 `[HksType]` 标记类或结构体，生成器会将其注册到脚本的类型系统。
+
+```csharp
+[HksType]
+public class DetectionResult
+{
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Confidence { get; set; }
+}
+```
+
+生成器会自动注册此类型，并生成字段访问函数的映射：
+
+```csharp
+// 自动生成
+table.RegisterType("DetectionResult", typeof(DetectionResult));
+// 字段访问转为函数调用:
+// result.x  →  Call("__get_DetectionResult_x", result)
+```
+
+脚本中使用：
+
+```python
+import my_algo
+
+res = detect_defects(img)
+print(res.confidence)   # 内部转为 __get_DetectionResult_confidence(res)
+```
+
+`[HksType]` 支持的成员：
+
+| C# 成员 | 脚本访问 | 说明 |
+|---------|---------|------|
+| `public` 属性 | `obj.Property` | 自动生成 `__get_Type_Property` 函数 |
+| `public` 字段 | `obj.Field` | 同上 |
+
+如果类型名与脚本已有类型冲突，可用 `alias` 重命名：
+
+```csharp
+[HksType(alias = "Defect")]
+public class DetectionResult { ... }
+```
+
+脚本中：
+
+```python
+res: Defect = detect_defects(img)
+```
 
 ### 3. 注册调用
 
