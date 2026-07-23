@@ -6,18 +6,17 @@ namespace HksScript.Module;
 
 public class LibraryConfig
 {
-    public string StdPath { get; set; } = "./lib/std/";
-    public string GlobalPath { get; set; } = "~/.hks/lib/";
+    public string StdPath { get; set; } = "";
+    public string GlobalPath { get; set; } = "";
     public string ProjectPath { get; set; } = "./lib/";
 
     public string[] GetSearchPaths()
     {
-        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        return [
-            Path.GetFullPath(ProjectPath.Replace("~", home)),
-            Path.GetFullPath(GlobalPath.Replace("~", home)),
-            Path.GetFullPath(StdPath.Replace("~", home)),
-        ];
+        var exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+        var std = string.IsNullOrEmpty(StdPath) ? Path.Combine(exeDir, "lib", "std") : StdPath;
+        var global = string.IsNullOrEmpty(GlobalPath) ? Path.Combine(exeDir, "lib") : GlobalPath;
+        var proj = Path.GetFullPath(ProjectPath);
+        return [proj, global, std];
     }
 
     public static LibraryConfig Default => new();

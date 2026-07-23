@@ -265,11 +265,12 @@ public class Cli
         }
 
         // 确定目标目录
+        var exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var targetDir = (tier.ToLower()) switch
         {
-            "std"     => Path.GetFullPath("./lib/std/"),
-            "global"  => Path.GetFullPath(Path.Combine(home, ".hks", "lib")),
+            "std"     => Path.Combine(exeDir, "lib", "std"),
+            "global"  => Path.Combine(exeDir, "lib"),
             "project" => Path.GetFullPath("./lib/"),
             _ => throw new Exception($"未知层级: {tier}，可用: std, global, project")
         };
