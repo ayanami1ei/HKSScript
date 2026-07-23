@@ -1,3 +1,4 @@
+using HksScript.Ast;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using HksScript.Lexer;
@@ -73,6 +74,14 @@ class SymbolCollector : HksScriptBaseListener
 
     public override void EnterFuncDef(HksScriptParser.FuncDefContext ctx)
     {
+        checker.EnterScope();
+        // 注册参数
+        if (ctx.paramList() != null)
+        {
+            foreach (var p in ctx.paramList().param())
+                checker.DefineSymbol(p.ID().GetText(), new TypeRef(p.type_().GetText()));
+        }
+
         var id = ctx.ID();
         var name = id.GetText();
         var retType = ctx.type_()?.GetText() ?? "void";
@@ -143,5 +152,10 @@ class SymbolCollector : HksScriptBaseListener
             Line = id.Symbol.Line, Column = id.Symbol.Column,
             Length = name.Length
         });
+    }
+
+    public override void ExitFuncDef(HksScriptParser.FuncDefContext ctx)
+    {
+        checker.ExitScope();
     }
 }

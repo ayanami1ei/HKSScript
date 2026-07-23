@@ -132,7 +132,11 @@ export function activate(context: vscode.ExtensionContext) {
                 if (!map) return hints;
 
                 for (const sym of map) {
-                    if (sym.kind !== 'variable') continue; // 只给变量显示类型
+                    if (sym.kind !== 'variable') continue;
+                    // 跳过已有显式类型标注的参数 (x: int 不需要再显示 : int)
+                    const lineText = document.lineAt(sym.line - 1).text;
+                    const after = lineText.substring(sym.column + sym.length).trim();
+                    if (after.startsWith(':')) continue;
                     const line = sym.line - 1;
                     const col = sym.column + sym.length;
                     const hint = new vscode.InlayHint(

@@ -53,6 +53,10 @@ public class TypeChecker
         return null;
     }
 
+    public void EnterScope() => symbols.EnterScope();
+    public void ExitScope() => symbols.ExitScope();
+    public void DefineSymbol(string name, TypeRef type) => symbols.Define(name, type);
+
     private static int Line(Expr? e) => e?.Position?.Line ?? -1;
     private static int Line(Stmt? s) => s?.Position?.Line ?? -1;
 
