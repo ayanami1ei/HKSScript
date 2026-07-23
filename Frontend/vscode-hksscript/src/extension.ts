@@ -189,6 +189,41 @@ export function activate(context: vscode.ExtensionContext) {
         }, '(', ',')
     );
 
+    // ─── 运行按钮 ───
+    context.subscriptions.push(
+        vscode.languages.registerCodeLensProvider({ pattern: '**/*.hks' }, {
+            provideCodeLenses(document) {
+                const runCmd: vscode.Command = {
+                    title: '▶ Run',
+                    command: 'hkscript.runScript',
+                    arguments: [document.uri.fsPath],
+                    tooltip: '执行此脚本'
+                };
+                return [new vscode.CodeLens(new vscode.Range(0, 0, 0, 0), runCmd)];
+            }
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('hkscript.runScript', (filePath: string) => {
+            const config = vscode.workspace.getConfiguration('hkscript');
+            const compilerPath = config.get<string>('compilerPath') || '';
+            const term = vscode.window.createTerminal('HKS Script');
+            term.show();
+            if (compilerPath) {
+                const dotnetCmd = compilerPath.endsWith('.dll') ? `dotnet "${compilerPath}"` : `"${compilerPath}"`;
+                term.sendText(`${dotnetCmd} run "${filePath}"`);
+            } else {
+                const root = findProjectRoot(filePath);
+                if (root) {
+                    term.sendText(`cd "${root}" && dotnet run -- run "${filePath}"`);
+                } else {
+                    term.sendText(`dotnet run -- run "${filePath}"`);
+                }
+            }
+        })
+    );
+
     setTimeout(() => {
         console.log('HKS: timeout');
         const ed = vscode.window.activeTextEditor;
