@@ -58,20 +58,7 @@ public class TypeChecker
 
     private void RegisterBuiltins()
     {
-        RegisterFunc("load",       new[] { "string" },             "Mat");
-        RegisterFunc("imread",     new[] { "string" },             "Mat");
-        RegisterFunc("imwrite",    new[] { "string", "Mat" },      "void");
-        RegisterFunc("gray",       new[] { "Mat" },                "Mat");
-        RegisterFunc("gaussian_blur", new[] { "Mat", "float" },    "Mat");
-        RegisterFunc("median_blur",  new[] { "Mat", "int" },      "Mat");
-        RegisterFunc("canny",      new[] { "Mat", "float", "float" },"Mat");
-        RegisterFunc("erode",      new[] { "Mat", "int" },         "Mat");
-        RegisterFunc("dilate",     new[] { "Mat", "int" },         "Mat");
-        RegisterFunc("threshold",  new[] { "Mat", "float", "float" },"Mat");
-        RegisterFunc("hough_circles", new[] { "Mat", "float", "float" },"Set<Circle>");
-        RegisterFunc("resize",     new[] { "Mat", "float" },       "Mat");
-        RegisterFunc("find_circles", new[] { "Mat" },              "Set<Circle>");
-        RegisterFunc("save",       new[] { "Mat", "string" },      "void");
+        // 内置运算符
         RegisterFunc("print",      new[] { "string" },             "void");
         RegisterFunc("print",      new[] { "int" },                "void");
         RegisterFunc("print",      new[] { "float" },              "void");

@@ -17,6 +17,13 @@ public class SymbolInfo
 
 public class CodePresenter
 {
+    private readonly Module.SymbolTable? _symbols;
+
+    public CodePresenter(Module.SymbolTable? symbols = null)
+    {
+        _symbols = symbols;
+    }
+
     public List<SymbolInfo> Present(string sourcePath)
     {
         var code = File.ReadAllText(sourcePath);
@@ -33,7 +40,7 @@ public class CodePresenter
         var builder = new AstBuilder();
         var ast = (Ast.Program)builder.Visit(tree)!;
 
-        var checker = new TypeChecker.TypeChecker();
+        var checker = new TypeChecker.TypeChecker(_symbols);
         checker.Check(ast);
 
         var symbols = new List<SymbolInfo>();

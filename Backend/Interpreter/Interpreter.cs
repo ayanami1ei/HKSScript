@@ -114,8 +114,7 @@ public class Interpreter : HirRunner
             {
                 try
                 {
-                    libManager.Import(mod, funcTable);
-                    Console.WriteLine($">>> loaded module: {mod}");
+                libManager.Import(mod, funcTable);
                 }
                 catch (Exception ex)
                 {

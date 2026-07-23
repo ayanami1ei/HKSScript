@@ -6,7 +6,7 @@ public class ModuleFunctionDef
 {
     public string ScriptName { get; set; } = "";
     public string Method { get; set; } = "";
-    public string[] Params { get; set; } = [];
+    public string[] ParamTypes { get; set; } = [];
     public string Returns { get; set; } = "";
 }
 
