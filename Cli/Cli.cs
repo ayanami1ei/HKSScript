@@ -7,6 +7,7 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using System.Text.Json;
 using System.Reflection;
+using System.Linq;
 
 namespace HksScript.Cli;
 
@@ -44,6 +45,7 @@ public class Cli
             case "diagnose":      DiagnoseFile(args[1]); break;
             case "run":           RunFile(args[1]);      break;
             case "code-present":  CodePresent(args[1]);  break;
+            case "complete":      CompleteFile(args[1]); break;
             case "hint":
                 if (args.Length >= 4)
                     HintFile(args[1], int.Parse(args[2]), int.Parse(args[3]));
@@ -455,6 +457,53 @@ public class Cli
             WriteIndented = true
         });
         Console.WriteLine(json);
+    }
+
+    private void CompleteFile(string path)
+    {
+        var code = File.ReadAllText(path);
+        // 解析 import 语句
+        var importedModules = new List<string>();
+        foreach (var line in code.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("import "))
+                importedModules.AddRange(trimmed[7..].Split(',').Select(s => s.Trim()));
+        }
+
+        var items = new List<object>();
+
+        // 已安装模块的函数
+        libManager.ListModules().ForEach(modName =>
+        {
+            var def = libManager.GetModule(modName);
+            if (def == null) return;
+            foreach (var fn in def.Functions)
+                items.Add(new { label = fn.ScriptName, detail = $"{fn.ScriptName}({string.Join(", ", fn.ParamTypes)}) -> {fn.Returns}", kind = "function" });
+        });
+
+        // 内置函数
+        var builtins = new[] { "print", "query", "range", "len" };
+        foreach (var name in builtins)
+            items.Add(new { label = name, detail = "", kind = "function" });
+
+        // 用 Ast 解析本地定义的函数和变量
+        try
+        {
+            var (ast, tree) = BuildAst(path);
+            if (ast != null)
+            {
+                var checker = MakeChecker();
+                checker.Check(ast);
+                var walker = new Antlr4.Runtime.Tree.ParseTreeWalker();
+                var collector = new SymbolCollector(new List<SymbolInfo>(), checker, ast);
+                walker.Walk(collector, tree);
+                // SymbolCollector 添加的符号通过 CodePresenter 机制，这里不重复
+            }
+        }
+        catch { }
+
+        Console.WriteLine(JsonSerializer.Serialize(items));
     }
 
     private void ListFunctions()
