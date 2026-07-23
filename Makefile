@@ -14,7 +14,7 @@ build:
 build-win:
 	cd HksFuncGenerator && dotnet restore -r win-x64; cd ..
 	dotnet restore -r win-x64
-	dotnet publish HKSScript.csproj -c $(CONFIG) -r win-x64 --no-self-contained -p:PublishSingleFile=true -o /tmp/hks_win
+	dotnet publish HKSScript.csproj -c $(CONFIG) -r win-x64 --self-contained true -p:PublishSingleFile=true -o /tmp/hks_win
 
 build-linux:
 	cd HksFuncGenerator && dotnet restore -r linux-x64; cd ..
@@ -51,13 +51,13 @@ wine-setup: build-win
 	@echo "Wine HKSScript: $(WINE_EXE)"
 
 wine-run:
-	wine $(WINE_EXE) run $(FILE)
+	WINEDEBUG=-all wine $(WINE_EXE) run $(FILE) 2>/dev/null
 
 wine-install:
-	wine $(WINE_EXE) install global $(DLL)
+	WINEDEBUG=-all wine $(WINE_EXE) install global $(DLL) 2>/dev/null
 
 wine-list:
-	wine $(WINE_EXE) list
+	WINEDEBUG=-all wine $(WINE_EXE) list 2>/dev/null
 
 # ─── 其它 ───
 clean:

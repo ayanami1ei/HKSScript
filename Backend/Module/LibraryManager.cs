@@ -12,7 +12,7 @@ public class LibraryConfig
 
     public string[] GetSearchPaths()
     {
-        var exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+        var exeDir = AppContext.BaseDirectory;
         var std = string.IsNullOrEmpty(StdPath) ? Path.Combine(exeDir, "lib", "std") : StdPath;
         var global = string.IsNullOrEmpty(GlobalPath) ? Path.Combine(exeDir, "lib") : GlobalPath;
         var proj = Path.GetFullPath(ProjectPath);

@@ -265,7 +265,7 @@ public class Cli
         }
 
         // 确定目标目录
-        var exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+        var exeDir = AppContext.BaseDirectory;
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var targetDir = (tier.ToLower()) switch
         {
@@ -277,7 +277,7 @@ public class Cli
         Directory.CreateDirectory(targetDir);
 
         // 处理 HksScript.Sdk 依赖 — 在加载用户 DLL 前注册
-        var cliDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+        var cliDir = AppContext.BaseDirectory;
         AppDomain.CurrentDomain.AssemblyResolve += (_, args) =>
         {
             var name = new System.Reflection.AssemblyName(args.Name).Name;
