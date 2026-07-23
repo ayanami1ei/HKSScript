@@ -79,7 +79,7 @@ tasks:
   wine-run:
     desc: 在 wine 中运行脚本
     cmds:
-      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe run '{{.FILE}}'"
+      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe run \"$(realpath '{{.FILE}}')\""
 
   wine-install:
     desc: 在 wine 中 install DLL
@@ -131,4 +131,4 @@ tasks:
   run:
     desc: 运行脚本 (native)
     cmds:
-      - "./bin/{{.CONFIG}}/net10.0/HKSScript run '{{.FILE}}'"
+      - "./bin/{{.CONFIG}}/net10.0/HKSScript run \"$(realpath '{{.FILE}}')\""
