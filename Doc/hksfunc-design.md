@@ -150,7 +150,71 @@ BuiltinRegistry.RegisterBuiltins(table);
 ModuleInit.RegisterAll(table);
 ```
 
-### 4. 库的层级与 CLI 对接
+### 4. 库加载模块（LibraryManager）
+
+库的查询、加载、注册功能不应耦合在 CLI 或 FunctionTable 里。提取为独立的 `LibraryManager` 类，任何外壳（CLI、REPL、GUI、代码生成器）都能使用。
+
+```
+┌─────────────┐   install/import    ┌────────────────┐
+│  CLI / REPL │ ──────────────────→ │ LibraryManager  │
+│  代码生成器   │                    │                │
+│   VS Code   │                    │ · 扫描库路径    │
+└─────────────┘                    │ · 加载 DLL     │
+                                   │ · 注册函数     │
+                                   │ · 缓存模块     │
+                                   └───────┬────────┘
+                                           │
+                         ┌─────────────────┼────────────┐
+                         ▼                 ▼            ▼
+                   ┌──────────┐    ┌────────────┐  ┌──────────┐
+                   │Function  │    │ TypeChecker │  │ 代码生成  │
+                   │ Table    │    │ (前端符号)   │  │ (C++/C#) │
+                   └──────────┘    └────────────┘  └──────────┘
+```
+
+#### LibraryManager 接口
+
+```csharp
+public class LibraryManager
+{
+    // 构造函数：从命令行选项或配置文件初始化
+    public LibraryManager(LibraryConfig config);
+
+    // 扫描库路径，返回所有可用模块列表
+    public List<ModuleDef> ListModules();
+
+    // 安装一个 DLL 到指定层级
+    public void InstallModule(string tier, string dllPath);
+
+    // 导入模块到指定的 FunctionTable
+    public void ImportModule(string moduleName, FunctionTable table);
+
+    // 批量导入所有已安装的模块
+    public void ImportAll(FunctionTable table);
+
+    // 获取模块定义（供代码生成器使用）
+    public ModuleDef? GetModuleDef(string moduleName);
+}
+```
+
+#### LibraryConfig
+
+配置来源可以是配置文件或程序化构造，不耦合于 CLI：
+
+```csharp
+public class LibraryConfig
+{
+    public string StdLibPath    { get; set; } = "./lib/std/";
+    public string GlobalLibPath { get; set; } = "~/.hks/lib/";
+    public string ProjectLibPath { get; set; } = "./lib/";
+
+    // 从 hksconfig.json 加载
+    public static LibraryConfig Load(string configPath);
+
+    // 跨平台展开路径
+    public string[] GetSearchPaths();
+}
+```
 
 #### 三个库层级
 
@@ -278,7 +342,7 @@ import my_global_lib   # 从 global 库查找 my_global_lib.json
 import project_specific # 从 project 库查找 project_specific.json
 ```
 
-import 执行时：
+import 执行时（`LibraryManager.ImportModule` 内部）：
 
 ```
 1. 在三个库目录中按 std → global → project 顺序查找 <name>.json
@@ -289,34 +353,32 @@ import 执行时：
 
 #### FunctionTable 对接
 
-现有的 `FunctionTable.ImportModule(name)` 需要扩展：
+`FunctionTable` 不再直接管理库路径。由 `LibraryManager` 统一加载，然后注册到 `FunctionTable`：
 
 ```csharp
-public class FunctionTable
-{
-    // 三个库目录
-    private static readonly string[] LibPaths = {
-        "lib/std/",
-        Path.Combine(Environment.GetFolderPath(SpecialFolder.UserProfile), ".hks", "lib"),
-        "lib/"
-    };
+// 任何外壳中的用法都一致
+var config = LibraryConfig.Load("hksconfig.json");
+var lib = new LibraryManager(config);
+var table = new FunctionTable();
 
-    public void ImportModule(string name)
-    {
-        foreach (var dir in LibPaths)
-        {
-            var path = Path.Combine(dir, name + ".json");
-            if (!File.Exists(path)) continue;
+// 注册内置函数
+BuiltinRegistry.RegisterBuiltins(table);
 
-            var def = JsonSerializer.Deserialize<ModuleDef>(File.ReadAllText(path));
-            RegisterFunctions(def);
-            return;  // 找到后停止
-        }
-        throw new Exception($"未找到模块: {name}");
-    }
+// 注册 std 库（基础运算符、load/save/print 等）
+lib.ImportAll(table);
 
-    private void RegisterFunctions(ModuleDef def)
-    {
+// 按需导入特定模块
+lib.ImportModule("my_algo", table);
+```
+
+代码生成器不需要 `FunctionTable`，直接用 `LibraryManager.GetModuleDef()` 获取模块定义：
+
+```csharp
+var lib = new LibraryManager(config);
+var def = lib.GetModuleDef("my_algo");
+// def.Functions → 生成 C++ 函数声明
+// def.Assembly  → 引用原 DLL
+```
         var asm = Assembly.LoadFrom(def.Assembly);
         foreach (var fn in def.Functions)
         {
