@@ -15,6 +15,7 @@ tasks:
       - task: build
       - task: release
 
+  # ─── 编译 ───
   build:
     desc: 编译 CLI (Release)
     cmds:
@@ -46,6 +47,7 @@ tasks:
     cmds:
       - npx vsce package
 
+  # ─── 打包 ───
   release:
     desc: 打包完整 release
     deps: [build, build-win, build-linux, build-nuget, build-vsix]
@@ -63,6 +65,7 @@ tasks:
       - tar czf {{.RELEASE_ARCHIVE}} -C release hkscript_v0.2.0/
       - "echo release: {{.RELEASE_ARCHIVE}}"
 
+  # ─── Wine ───
   wine-setup:
     desc: 安装 Windows 版 HKSScript 到 Wine 固定目录
     deps: [build-win]
@@ -70,56 +73,39 @@ tasks:
       - "mkdir -p {{.HOME}}/.hks"
       - "cp /tmp/hks_win/HKSScript.exe {{.HOME}}/.hks/"
       - "cp bin/{{.CONFIG}}/net10.0/HksScript.Sdk.dll {{.HOME}}/.hks/ 2>/dev/null || true"
-      - "ln -sf {{.HOME}}/.hks/HKSScript.exe {{.HOME}}/.hks/hks.exe 2>/dev/null || true"
       - "echo Wine HKSScript: {{.HOME}}/.hks/HKSScript.exe"
 
   wine-run:
-    desc: 在 wine 中运行脚本 (需先 wine-setup)
+    desc: 在 wine 中运行脚本
     cmds:
       - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe run '{{.FILE}}'"
-
-  wine-build:
-    desc: 在 Linux 上编译 Windows .csproj (native dotnet)
-    cmds:
-      - "dotnet build '{{.CSPROJ}}' -c Release -p:EnableWindowsTargeting=true 2>&1 | tail -5"
 
   wine-install:
     desc: 在 wine 中 install DLL
     cmds:
       - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe install global '{{.DLL}}'"
 
-  wine-deploy:
-    desc: 编译 + install + 复制原生 DLL (一站完成)
-    deps: [wine-build]
+  wine-delete:
+    desc: 在 wine 中删除模块
     cmds:
-      - task: wine-install
-      - "cp $(dirname '{{.DLL}}')/*.dll {{.HOME}}/.hks/lib/ 2>/dev/null || true"
-      - "echo === 部署完成: wine-run FILE=脚本.hks ==="
-
-  deploy-zsvision:
-    desc: 编译 + install ZSVision 算法库
-    cmds:
-      - "cp -rf '{{.ZSVISION}}/.' '{{.ZSVISION_SRC}}/' && rm -rf '{{.ZSVISION_SRC}}/bin' '{{.ZSVISION_SRC}}/obj' '{{.ZSVISION_SRC}}/nuget.config' 2>/dev/null; true"
-      - task: wine-build
-        vars: {CSPROJ: '{{.ZSVISION_CSPROJ}}'}
-      - task: wine-install
-        vars: {DLL: '{{.ZSVISION_DLL}}'}
-      - "cp '{{.ZSVISION}}/bin/Release/net8.0-windows/'*.dll {{.HOME}}/.hks/lib/ 2>/dev/null || true"
-      - "echo === ZSVision 部署完成 ==="
-
-  wine-build-install:
-    desc: 编译 + install Windows 项目
-    cmds:
-      - task: wine-build
-      - task: wine-install
-        vars:
-          DLL: "{{.DLL}}"
+      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe delete global '{{.MODULE}}'"
 
   wine-list:
     desc: 在 wine 中列出已注册函数
     cmds:
       - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe list"
 
+  # ─── ZSVision ───
+  deploy-zsvision:
+    desc: 编译 + install ZSVision 算法库
+    cmds:
+      - "cp -rf '{{.ZSVISION}}/.' '{{.ZSVISION_SRC}}/' && rm -rf '{{.ZSVISION_SRC}}/bin' '{{.ZSVISION_SRC}}/obj' '{{.ZSVISION_SRC}}/nuget.config' 2>/dev/null; true"
+      - "dotnet build '{{.ZSVISION_CSPROJ}}' -c Release -p:EnableWindowsTargeting=true 2>&1 | tail -5"
+      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe install global '{{.ZSVISION_DLL}}'"
+      - "cp '{{.ZSVISION}}/bin/Release/net8.0-windows/'*.dll {{.HOME}}/.hks/lib/ 2>/dev/null || true"
+      - "echo === ZSVision 部署完成 ==="
+
+  # ─── 快捷命令 (native) ───
   clean:
     desc: 清空产物
     cmds:
@@ -131,11 +117,16 @@ tasks:
       - "./bin/{{.CONFIG}}/net10.0/HKSScript list"
 
   install:
-    desc: 安装模块
+    desc: 安装模块 (native)
     cmds:
       - "./bin/{{.CONFIG}}/net10.0/HKSScript install global '{{.DLL}}'"
 
+  delete:
+    desc: 删除模块 (native)
+    cmds:
+      - "./bin/{{.CONFIG}}/net10.0/HKSScript delete global '{{.MODULE}}'"
+
   run:
-    desc: 运行脚本
+    desc: 运行脚本 (native)
     cmds:
       - "./bin/{{.CONFIG}}/net10.0/HKSScript run '{{.FILE}}'"
