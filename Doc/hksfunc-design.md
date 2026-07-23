@@ -340,18 +340,57 @@ public class FunctionTable
 
 ```
 HKSScript/
-├── Shared/
-│   └── HksFuncAttribute.cs          ← 特性定义（被引擎和算法项目引用）
-├── HksFuncGenerator/                 ← 源生成器项目
+├── HksScript.Sdk/                     ← NuGet 库（用户引用即可使用标签）
+│   ├── HksScript.Sdk.csproj
+│   ├── HksFuncAttribute.cs           ← [HksFunc] 和 [HksType] 定义
+│   └── HksFuncRegistry.cs           ← partial class 声明
+├── HksFuncGenerator/                  ← 源生成器项目
 │   ├── HksFuncGenerator.csproj
-│   ├── HksFuncGenerator.cs           ← ISourceGenerator 实现
-│   └── HksFuncRegistry.sig           ← 生成器输出模板
+│   ├── HksFuncGenerator.cs            ← ISourceGenerator 实现
+│   └── HksFuncRegistry.sig            ← 生成器输出模板
+├── Shared/
+│   └── (旧特性定义，迁移到 HksScript.Sdk 后删除)
 ├── Backend/Module/Algorithm/
-│   ├── BasicAlgo.cs                  ← 现有的算法类，加上 [HksFunc]
-│   └── ModuleInit.cs                 ← 改为调用生成的 RegisterAll
+│   ├── BasicAlgo.cs                   ← 现有的算法类，加上 [HksFunc]
+│   └── ModuleInit.cs                  ← 改为调用生成的 RegisterAll
 └── Cli/
-    └── Cli.cs                        ← 启动时调 HksFuncRegistry.RegisterAll
+    └── Cli.cs                         ← 启动时调 HksFuncRegistry.RegisterAll
 ```
+
+### HksScript.Sdk NuGet 包
+
+用户在自己的项目中引用此包即可使用 `[HksFunc]` 和 `[HksType]`：
+
+```bash
+dotnet add package HksScript.Sdk
+```
+
+```csharp
+using HksScript;
+
+public class MyAlgo
+{
+    [HksFunc]
+    public static Mat CustomFilter(Mat src, double sigma) { ... }
+
+    [HksType]
+    public class MyResult
+    {
+        public double Value { get; set; }
+    }
+}
+```
+
+包内容：
+
+| 文件 | 说明 |
+|------|------|
+| `HksFuncAttribute.cs` | `[HksFunc(alias="xxx")]` 特性 |
+| `HksTypeAttribute.cs` | `[HksType(alias="xxx")]` 特性 |
+| `HksFuncRegistry.cs` | `partial class HksFuncRegistry` 声明，供生成器补充 |
+| `HksScript.Sdk.props` | MSBuild 属性，自动引用源生成器 |
+
+引擎自身的 `BasicAlgo.cs` 也通过引用 `HksScript.Sdk` 来使用标签，和第三方用户无区别。
 
 ## 注意事项
 
