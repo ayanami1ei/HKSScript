@@ -1,0 +1,90 @@
+version: '3'
+
+vars:
+  RELEASE_DIR: release/hkscript_v0.2.0
+  RELEASE_ARCHIVE: release/hkscript_v0.2.0.tar.gz
+  CONFIG: Release
+
+tasks:
+  default:
+    cmds:
+      - task: build
+      - task: release
+
+  build:
+    desc: 编译 CLI (Release)
+    cmds:
+      - dotnet build HKSScript.csproj -c {{.CONFIG}} --no-dependencies
+
+  build-win:
+    desc: 编译 Windows 单文件 exe
+    cmds:
+      - cd HksFuncGenerator && dotnet restore -r win-x64 && cd ..
+      - dotnet restore -r win-x64
+      - dotnet publish HKSScript.csproj -c {{.CONFIG}} -r win-x64 --no-self-contained -p:PublishSingleFile=true -o /tmp/hks_win
+
+  build-linux:
+    desc: 编译 Linux 单文件
+    cmds:
+      - cd HksFuncGenerator && dotnet restore -r linux-x64 && cd ..
+      - dotnet restore -r linux-x64
+      - dotnet publish HKSScript.csproj -c {{.CONFIG}} -r linux-x64 --no-self-contained -p:PublishSingleFile=true -o /tmp/hks_linux
+
+  build-nuget:
+    desc: 编译 NuGet 包
+    cmds:
+      - dotnet build HksScript.Sdk/HksScript.Sdk.csproj -c {{.CONFIG}}
+      - dotnet pack HksScript.Sdk/HksScript.Sdk.csproj -c {{.CONFIG}} -o ./
+
+  build-vsix:
+    desc: 编译 VS Code 插件
+    dir: Frontend/vscode-hksscript
+    cmds:
+      - npx vsce package
+
+  release:
+    desc: 打包完整 release
+    deps: [build, build-win, build-linux, build-nuget, build-vsix]
+    cmds:
+      - mkdir -p {{.RELEASE_DIR}}
+      - "cp /tmp/hks_linux/HKSScript {{.RELEASE_DIR}}/ 2>/dev/null || true"
+      - "cp /tmp/hks_win/HKSScript.exe {{.RELEASE_DIR}}/ 2>/dev/null || true"
+      - cp bin/{{.CONFIG}}/net10.0/HKSScript.dll {{.RELEASE_DIR}}/
+      - cp bin/{{.CONFIG}}/net10.0/HKSScript.runtimeconfig.json {{.RELEASE_DIR}}/
+      - "cp bin/{{.CONFIG}}/net10.0/HksScript.Sdk.dll {{.RELEASE_DIR}}/"
+      - "cp HksScript.Sdk.*.nupkg {{.RELEASE_DIR}}/ 2>/dev/null || true"
+      - "cp Frontend/vscode-hksscript/hksscript-*.vsix {{.RELEASE_DIR}}/ 2>/dev/null || true"
+      - "cp run_csharp.sh {{.RELEASE_DIR}}/ 2>/dev/null || true"
+      - "echo hks.cmd > {{.RELEASE_DIR}}/hks.cmd"
+      - tar czf {{.RELEASE_ARCHIVE}} -C release hkscript_v0.2.0/
+      - "echo release: {{.RELEASE_ARCHIVE}}"
+
+  wine-test:
+    desc: 用 wine 运行 Windows exe
+    cmds:
+      - wine explorer /desktop=hks,1280x720 /tmp/hks_win/HKSScript.exe {{.CLI_ARGS}}
+
+  wine-install:
+    desc: 在 wine 中 install DLL
+    cmds:
+      - wine explorer /desktop=hks,1280x720 /tmp/hks_win/HKSScript.exe install global {{.DLL}}
+
+  clean:
+    desc: 清空产物
+    cmds:
+      - "rm -rf obj bin release/{{.RELEASE_DIR}} Frontend/vscode-hksscript/*.vsix"
+
+  list:
+    desc: 列出已注册函数
+    cmds:
+      - "./bin/{{.CONFIG}}/net10.0/HKSScript list"
+
+  install:
+    desc: 安装模块
+    cmds:
+      - "./bin/{{.CONFIG}}/net10.0/HKSScript install global {{.DLL}}"
+
+  run:
+    desc: 运行脚本
+    cmds:
+      - "./bin/{{.CONFIG}}/net10.0/HKSScript run {{.FILE}}"
