@@ -1,5 +1,4 @@
 using HksScript.Interpreter;
-using OpenCvSharp;
 
 namespace HksScript.Cli;
 
@@ -7,16 +6,6 @@ public static class BuiltinRegistry
 {
     public static void RegisterBuiltins(FunctionTable table)
     {
-        // 图像 IO
-        table.Register("load", new ExternalFunction("load",
-            args => Cv2.ImRead((string)args[0]!)));
-        table.Register("imread", new ExternalFunction("imread",
-            args => Cv2.ImRead((string)args[0]!)));
-        table.Register("imwrite", new ExternalFunction("imwrite",
-            args => { Cv2.ImWrite((string)args[0]!, (Mat)args[1]!); return null; }));
-        table.Register("save", new ExternalFunction("save",
-            args => { Cv2.ImWrite((string)args[1]!, (Mat)args[0]!); return null; }));
-
         // 打印
         table.Register("print", new ExternalFunction("print",
             args => { Console.WriteLine(args[0]?.ToString()); return null; }));

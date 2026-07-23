@@ -6,18 +6,25 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateProgramFile>false</GenerateProgramFile>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="HksFuncGenerator/**/*.cs" />
+    <Compile Remove="HksScript.Sdk/**/*.cs" />
   </ItemGroup>
+
+  <Target Name="CopySdk" AfterTargets="Build">
+    <Copy SourceFiles="HksScript.Sdk/bin/$(Configuration)/netstandard2.0/HksScript.Sdk.dll" DestinationFolder="$(OutputPath)" Condition="Exists('HksScript.Sdk/bin/$(Configuration)/netstandard2.0/HksScript.Sdk.dll')" />
+  </Target>
 
   <Target Name="BuildGenerator" BeforeTargets="CoreCompile">
     <MSBuild Projects="HksFuncGenerator/HksFuncGenerator.csproj" Targets="Build" Properties="Configuration=$(Configuration)" />
   </Target>
 
   <ItemGroup>
-    <Analyzer Include="HksFuncGenerator/bin/Debug/netstandard2.0/HksFuncGenerator.dll" />
+    <Analyzer Include="HksFuncGenerator/bin/$(Configuration)/netstandard2.0/HksFuncGenerator.dll" />
   </ItemGroup>
 
   <ItemGroup>

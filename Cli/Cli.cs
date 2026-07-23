@@ -1,5 +1,4 @@
 using HksScript.Interpreter;
-using HksScript.Algorithms;
 using HksScript.Lexer;
 using HksScript.TypeChecker;
 using HksScript.Lowering;
@@ -33,7 +32,6 @@ public class Cli
     {
         libManager.ScanModules();
         BuiltinRegistry.RegisterBuiltins(funcTable);
-        ModuleInit.RegisterAll(funcTable);
     }
 
     public void Run(string[] args)
@@ -275,16 +273,59 @@ public class Cli
         };
         Directory.CreateDirectory(targetDir);
 
-        // 加载 DLL，扫描 [HksFunc]
-        var asm = Assembly.LoadFrom(dllPath);
-        var methods = asm.GetTypes()
-            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Static))
-            .Where(m => m.GetCustomAttribute<HksFuncAttribute>() != null)
-            .ToList();
-
-        if (methods.Count == 0)
+        // 处理 HksScript.Sdk 依赖 — 在加载用户 DLL 前注册
+        var cliDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
+        AppDomain.CurrentDomain.AssemblyResolve += (_, args) =>
         {
-            Console.Error.WriteLine($"DLL 中未找到标记了 [HksFunc] 的方法");
+            var name = new System.Reflection.AssemblyName(args.Name).Name;
+            if (name == "HksScript.Sdk")
+            {
+                var path = Path.Combine(cliDir, name + ".dll");
+                return File.Exists(path) ? System.Reflection.Assembly.LoadFrom(path) : null;
+            }
+            return null;
+        };
+
+        // 加载 DLL，扫描 [HksFunc] 和 [HksType]
+        var asm = Assembly.LoadFrom(dllPath);
+        var methods = new List<(System.Reflection.MethodInfo Method, string? Alias)>();
+        var types = new List<(System.Type Type, string? Alias)>();
+
+        foreach (var t in asm.GetTypes())
+        {
+            // 扫描 [HksType]
+            foreach (var attr in t.GetCustomAttributesData())
+            {
+                if (attr.AttributeType.Name == "HksTypeAttribute")
+                {
+                    var alias = attr.NamedArguments
+                        .FirstOrDefault(a => a.MemberName == "Alias")
+                        .TypedValue.Value?.ToString();
+                    types.Add((t, alias));
+                    break;
+                }
+            }
+
+            // 扫描 [HksFunc]
+            foreach (var m in t.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance))
+            {
+                foreach (var attr in m.GetCustomAttributesData())
+                {
+                    if (attr.AttributeType.Name == "HksFuncAttribute")
+                    {
+                        var alias = attr.NamedArguments
+                            .FirstOrDefault(a => a.MemberName == "Alias")
+                            .TypedValue.Value?.ToString();
+                        methods.Add((m, alias));
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (methods.Count == 0 && types.Count == 0)
+        {
+            Console.Error.WriteLine($"DLL 中未找到 [HksFunc] 或 [HksType]");
             return;
         }
 
@@ -292,31 +333,48 @@ public class Cli
             .Replace(".", "_").Replace(" ", "_");
         var functions = new List<object>();
 
-        foreach (var m in methods)
+        foreach (var (m, alias) in methods)
         {
-            var attr = m.GetCustomAttribute<HksFuncAttribute>()!;
-            var scriptName = attr.Alias ?? ToSnakeCase(m.Name);
-            var paramTypes = m.GetParameters().Select(p => p.ParameterType.Name switch
-            {
-                "Int32" => "int",
-                "Double" or "Single" => "float",
-                "String" => "string",
-                "Boolean" => "bool",
-                _ when p.ParameterType.Name.Contains("List") => "Set<" + p.ParameterType.GetGenericArguments()[0].Name + ">",
-                _ => p.ParameterType.Name
-            }).ToArray();
-            var returnType = m.ReturnType.Name switch
-            {
-                "Int32" => "int",
-                "Double" or "Single" => "float",
-                "String" => "string",
-                "Boolean" => "bool",
-                "Void" => "void",
-                _ when m.ReturnType.Name.Contains("List") => "Set<" + m.ReturnType.GetGenericArguments()[0].Name + ">",
-                _ => m.ReturnType.Name
-            };
+            var scriptName = alias ?? ToSnakeCase(m.Name);
+            var isInstance = !m.IsStatic;
+            var allParams = isInstance
+                ? new[] { m.DeclaringType!.Name }.Concat(m.GetParameters().Select(p => MapTypeName(p.ParameterType.Name))).ToArray()
+                : m.GetParameters().Select(p => MapTypeName(p.ParameterType.Name)).ToArray();
+            var returnType = MapTypeName(m.ReturnType.Name);
+            var methodRef = isInstance
+                ? $"{m.DeclaringType!.FullName}.{m.Name}|instance"
+                : $"{m.DeclaringType!.FullName}.{m.Name}";
+            functions.Add(new { scriptName, method = methodRef, paramTypes = allParams, returns = returnType });
+        }
 
-            functions.Add(new { scriptName, method = $"{m.DeclaringType!.FullName}.{m.Name}", paramTypes, returns = returnType });
+        // 扫描 [HksType]: 注册构造器和字段访问器
+        foreach (var (t, alias) in types)
+        {
+            var typeName = alias ?? ToSnakeCase(t.Name);
+
+            // 默认构造函数
+            var ctor = t.GetConstructor(Type.EmptyTypes);
+            if (ctor != null)
+            {
+                functions.Add(new { scriptName = typeName, method = $"{t.FullName}.{typeName}", paramTypes = Array.Empty<string>(), returns = t.Name });
+            }
+
+            // 带参数的构造函数
+            foreach (var c in t.GetConstructors()
+                .Where(c => c.GetParameters().Length > 0))
+            {
+                var ctorParams = c.GetParameters()
+                    .Select(p => MapTypeName(p.ParameterType.Name)).ToArray();
+                functions.Add(new { scriptName = typeName, method = $"{t.FullName}.{typeName}", paramTypes = ctorParams, returns = t.Name });
+            }
+
+            // 公共字段读写器
+            foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.Instance))
+            {
+                var fieldType = MapTypeName(f.FieldType.Name);
+                functions.Add(new { scriptName = $"{typeName}_get_{f.Name}", method = $"{t.FullName}.get_{f.Name}", paramTypes = new[] { t.Name }, returns = fieldType });
+                functions.Add(new { scriptName = $"{typeName}_set_{f.Name}", method = $"{t.FullName}.set_{f.Name}", paramTypes = new[] { t.Name, fieldType }, returns = "void" });
+            }
         }
 
         // 生成模块定义 JSON
@@ -331,6 +389,17 @@ public class Cli
 
     private static string ToSnakeCase(string name) =>
         string.Concat(name.Select((c, i) => i > 0 && char.IsUpper(c) ? "_" + c.ToString() : c.ToString())).ToLower();
+
+    private static string MapTypeName(string name) => name switch
+    {
+        "Int32" => "int",
+        "Double" or "Single" => "float",
+        "String" => "string",
+        "Boolean" => "bool",
+        "Void" => "void",
+        _ when name.Contains("List") => "Set<>",
+        _ => name
+    };
 
     // ─── hint 命令 ───
 
@@ -379,7 +448,7 @@ public class Cli
 
     private void CodePresent(string path)
     {
-        var presenter = new CodePresenter();
+        var presenter = new CodePresenter(libManager.RegisterSymbols());
         var symbols = presenter.Present(path);
         var json = JsonSerializer.Serialize(symbols, new JsonSerializerOptions
         {
@@ -390,14 +459,22 @@ public class Cli
 
     private void ListFunctions()
     {
-        Console.WriteLine("已注册的函数:");
-        var names = new[] { "imread", "imwrite", "gray", "gaussian_blur", "median_blur", "canny",
-                            "erode", "dilate", "threshold", "hough_circles",
-                            "resize", "__init_basic" };
+        Console.WriteLine("已注册的内置函数:");
+        var names = new[] { "print", "query", "range", "len" };
         foreach (var name in names)
         {
             try { funcTable.Find(name); Console.WriteLine($"  {name}"); }
             catch { }
+        }
+
+        Console.WriteLine("\n已安装的模块:");
+        foreach (var modName in libManager.ListModules())
+        {
+            Console.WriteLine($"  [{modName}]");
+            var def = libManager.GetModule(modName);
+            if (def == null) continue;
+            foreach (var fn in def.Functions)
+                Console.WriteLine($"    {fn.ScriptName}({string.Join(", ", fn.ParamTypes)}) -> {fn.Returns}");
         }
     }
 

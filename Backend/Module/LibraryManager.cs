@@ -48,7 +48,7 @@ public class LibraryManager
             {
                 try
                 {
-                    var def = JsonSerializer.Deserialize<ModuleDefinition>(File.ReadAllText(file));
+                    var def = JsonSerializer.Deserialize<ModuleDefinition>(File.ReadAllText(file), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     if (def != null && !string.IsNullOrEmpty(def.Module))
                         _modules.TryAdd(def.Module, def);
                 }
@@ -64,7 +64,7 @@ public class LibraryManager
         _symbols = new SymbolTable();
         foreach (var def in _modules.Values)
             foreach (var fn in def.Functions)
-                _symbols.RegisterFunction(fn.ScriptName, fn.Params, fn.Returns);
+                _symbols.RegisterFunction(fn.ScriptName, fn.ParamTypes, fn.Returns);
         return _symbols;
     }
 
@@ -89,25 +89,85 @@ public class LibraryManager
 
         foreach (var fn in def.Functions)
         {
-            var typeName = fn.Method[..fn.Method.LastIndexOf('.')];
-            var methodName = fn.Method[(fn.Method.LastIndexOf('.') + 1)..];
-            var type = asm.GetType(typeName);
-            var method = type?.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
-            if (method == null) continue;
+            var methodStr = fn.Method;
+            var isInstance = methodStr.EndsWith("|instance");
+            if (isInstance) methodStr = methodStr[..^"|instance".Length];
 
-            var extFn = new ExternalFunction(fn.ScriptName, args =>
+            var dot = methodStr.LastIndexOf('.');
+            var typeName = methodStr[..dot];
+            var methodName = methodStr[(dot + 1)..];
+            var type = asm.GetType(typeName);
+            if (type == null) continue;
+
+            // 构造器 (methodName == short type name)
+            if (string.Equals(methodName, type.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                table.Register(fn.ScriptName, new ExternalFunction(fn.ScriptName, args =>
+                {
+                    var typedArgs = args.Select((a, i) => ConvertArg(a, fn.ParamTypes[i])).ToArray();
+                    return Activator.CreateInstance(type, typedArgs);
+                }));
+                continue;
+            }
+
+            // 字段 get/set
+            if (methodName.StartsWith("get_"))
+            {
+                var fieldName = methodName[4..];
+                var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
+                if (field == null) continue;
+                table.Register(fn.ScriptName, new ExternalFunction(fn.ScriptName, args =>
+                {
+                    return field.GetValue(args[0]);
+                }));
+                continue;
+            }
+
+            if (methodName.StartsWith("set_"))
+            {
+                var fieldName = methodName[4..];
+                var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
+                if (field == null) continue;
+                table.Register(fn.ScriptName, new ExternalFunction(fn.ScriptName, args =>
+                {
+                    var val = ConvertArg(args[1], fn.ParamTypes[1]);
+                    field.SetValue(args[0], val);
+                    return null;
+                }));
+                continue;
+            }
+
+            // 实例方法
+            if (isInstance)
+            {
+                var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
+                if (method == null) continue;
+                table.Register(fn.ScriptName, new ExternalFunction(fn.ScriptName, args =>
+                {
+                    var instance = args[0];
+                    var typedArgs = new object?[args.Length - 1];
+                    for (int i = 1; i < args.Length; i++)
+                        typedArgs[i - 1] = ConvertArg(args[i], fn.ParamTypes[i]);
+                    return method.Invoke(instance, typedArgs);
+                }));
+                continue;
+            }
+
+            // 静态方法
+            var staticMethod = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+            if (staticMethod == null) continue;
+            table.Register(fn.ScriptName, new ExternalFunction(fn.ScriptName, args =>
             {
                 var typedArgs = new object?[args.Length];
                 for (int i = 0; i < args.Length; i++)
-                    typedArgs[i] = ConvertArg(args[i], fn.Params[i]);
-                return method.Invoke(null, typedArgs);
-            });
-
-            table.Register(fn.ScriptName, extFn);
+                    typedArgs[i] = ConvertArg(args[i], fn.ParamTypes[i]);
+                return staticMethod.Invoke(null, typedArgs);
+            }));
         }
     }
 
     public List<string> ListModules() => _modules.Keys.ToList();
+    public ModuleDefinition? GetModule(string name) => _modules.GetValueOrDefault(name);
 
     private static object? ConvertArg(object? value, string targetType) => targetType switch
     {

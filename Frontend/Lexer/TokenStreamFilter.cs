@@ -13,8 +13,8 @@ public class FilteredTokenSource : ITokenSource
         this.tokens = tokens;
     }
 
-    public int Line => tokens[pos]?.Line ?? 0;
-    public int Column => tokens[pos]?.Column ?? 0;
+    public int Line => pos < tokens.Count ? tokens[pos]?.Line ?? 0 : 0;
+    public int Column => pos < tokens.Count ? tokens[pos]?.Column ?? 0 : 0;
     public ICharStream InputStream => tokens[0]?.TokenSource?.InputStream!;
     public string SourceName => tokens[0]?.TokenSource?.SourceName ?? "";
     public ITokenFactory TokenFactory { get; set; } = CommonTokenFactory.Default;
