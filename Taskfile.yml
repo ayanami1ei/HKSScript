@@ -71,12 +71,12 @@ tasks:
   wine-run:
     desc: 在 wine 中运行脚本 (需先 wine-setup)
     cmds:
-      - wine {{.HOME}}/.hks/HKSScript.exe run {{.FILE}}
+      - "wine {{.HOME}}/.hks/HKSScript.exe run '{{.FILE}}'"
 
   wine-install:
     desc: 在 wine 中 install DLL
     cmds:
-      - wine {{.HOME}}/.hks/HKSScript.exe install global {{.DLL}}
+      - "wine {{.HOME}}/.hks/HKSScript.exe install global '{{.DLL}}'"
 
   wine-list:
     desc: 在 wine 中列出已注册函数
@@ -96,9 +96,9 @@ tasks:
   install:
     desc: 安装模块
     cmds:
-      - "./bin/{{.CONFIG}}/net10.0/HKSScript install global {{.DLL}}"
+      - "./bin/{{.CONFIG}}/net10.0/HKSScript install global '{{.DLL}}'"
 
   run:
     desc: 运行脚本
     cmds:
-      - "./bin/{{.CONFIG}}/net10.0/HKSScript run {{.FILE}}"
+      - "./bin/{{.CONFIG}}/net10.0/HKSScript run '{{.FILE}}'"
