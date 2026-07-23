@@ -7,22 +7,22 @@ export class CompilerClient {
     private projectRootCache = new Map<string, string | null>();
 
     getSymbols(filePath: string): SymbolInfo[] | null {
-        return this.exec(filePath, 'code-present');
+        return this.exec('code-present', filePath);
     }
 
     getHint(filePath: string, line: number, col: number): any | null {
-        return this.exec(filePath, 'hint', String(line), String(col));
+        return this.exec('hint', filePath, String(line), String(col));
     }
 
     runDiagnose(filePath: string): any[] | null {
-        return this.exec(filePath, 'diagnose');
+        return this.exec('diagnose', filePath);
     }
 
     getCompilerPath(): string {
         return vscode.workspace.getConfiguration('hkscript').get<string>('compilerPath') || '';
     }
 
-    private exec(filePath: string, ...extraArgs: string[]): any | null {
+    private exec(subCmd: string, filePath: string, ...rest: string[]): any | null {
         try {
             const compilerPath = this.getCompilerPath();
             const opts: any = { timeout: 15000, encoding: 'utf-8' as const };
@@ -32,16 +32,16 @@ export class CompilerClient {
             if (compilerPath) {
                 if (compilerPath.endsWith('.dll')) {
                     cmd = 'dotnet';
-                    args = [compilerPath, ...extraArgs, filePath];
+                    args = [compilerPath, subCmd, filePath, ...rest];
                 } else {
                     cmd = compilerPath;
-                    args = [...extraArgs, filePath];
+                    args = [subCmd, filePath, ...rest];
                 }
             } else {
                 const root = this.findProjectRoot(filePath);
                 if (!root) return null;
                 cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
-                args = ['run', '--', ...extraArgs, filePath];
+                args = ['run', '--', subCmd, filePath, ...rest];
                 opts.cwd = root;
             }
 

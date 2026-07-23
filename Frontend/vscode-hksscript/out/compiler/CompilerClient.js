@@ -9,18 +9,18 @@ class CompilerClient {
         this.projectRootCache = new Map();
     }
     getSymbols(filePath) {
-        return this.exec(filePath, 'code-present');
+        return this.exec('code-present', filePath);
     }
     getHint(filePath, line, col) {
-        return this.exec(filePath, 'hint', String(line), String(col));
+        return this.exec('hint', filePath, String(line), String(col));
     }
     runDiagnose(filePath) {
-        return this.exec(filePath, 'diagnose');
+        return this.exec('diagnose', filePath);
     }
     getCompilerPath() {
         return vscode.workspace.getConfiguration('hkscript').get('compilerPath') || '';
     }
-    exec(filePath, ...extraArgs) {
+    exec(subCmd, filePath, ...rest) {
         try {
             const compilerPath = this.getCompilerPath();
             const opts = { timeout: 15000, encoding: 'utf-8' };
@@ -29,11 +29,11 @@ class CompilerClient {
             if (compilerPath) {
                 if (compilerPath.endsWith('.dll')) {
                     cmd = 'dotnet';
-                    args = [compilerPath, ...extraArgs, filePath];
+                    args = [compilerPath, subCmd, filePath, ...rest];
                 }
                 else {
                     cmd = compilerPath;
-                    args = [...extraArgs, filePath];
+                    args = [subCmd, filePath, ...rest];
                 }
             }
             else {
@@ -41,7 +41,7 @@ class CompilerClient {
                 if (!root)
                     return null;
                 cmd = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
-                args = ['run', '--', ...extraArgs, filePath];
+                args = ['run', '--', subCmd, filePath, ...rest];
                 opts.cwd = root;
             }
             const result = cp.spawnSync(cmd, args, opts);
