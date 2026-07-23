@@ -282,8 +282,16 @@ public class Cli
             var name = new System.Reflection.AssemblyName(args.Name).Name;
             if (name == "HksScript.Sdk")
             {
+                // 优先在 CLI 同目录下找
                 var path = Path.Combine(cliDir, name + ".dll");
-                return File.Exists(path) ? System.Reflection.Assembly.LoadFrom(path) : null;
+                if (File.Exists(path))
+                    return System.Reflection.Assembly.LoadFrom(path);
+                // 在 NuGet 缓存中找
+                var nugetPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    ".nuget", "packages", "hksscript.sdk", "1.0.1", "lib", "netstandard2.0", name + ".dll");
+                if (File.Exists(nugetPath))
+                    return System.Reflection.Assembly.LoadFrom(nugetPath);
             }
             return null;
         };
@@ -295,34 +303,34 @@ public class Cli
 
         foreach (var t in asm.GetTypes())
         {
-            // 扫描 [HksType]
-            foreach (var attr in t.GetCustomAttributesData())
+            try
             {
-                if (attr.AttributeType.Name == "HksTypeAttribute")
+                // 扫描 [HksType]
+                foreach (var attr in t.GetCustomAttributesData())
                 {
-                    var alias = attr.NamedArguments
-                        .FirstOrDefault(a => a.MemberName == "Alias")
-                        .TypedValue.Value?.ToString();
-                    types.Add((t, alias));
-                    break;
-                }
-            }
-
-            // 扫描 [HksFunc]
-            foreach (var m in t.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance))
-            {
-                foreach (var attr in m.GetCustomAttributesData())
-                {
-                    if (attr.AttributeType.Name == "HksFuncAttribute")
+                    if (attr.AttributeType.Name == "HksTypeAttribute")
                     {
-                        var alias = attr.NamedArguments
-                            .FirstOrDefault(a => a.MemberName == "Alias")
-                            .TypedValue.Value?.ToString();
-                        methods.Add((m, alias));
+                        var alias = GetNamedArg(attr, "Alias");
+                        types.Add((t, alias));
                         break;
                     }
                 }
+
+                // 扫描 [HksFunc]
+                foreach (var m in t.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance))
+                {
+                    foreach (var attr in m.GetCustomAttributesData())
+                    {
+                        if (attr.AttributeType.Name == "HksFuncAttribute")
+                        {
+                            var alias = GetNamedArg(attr, "Alias");
+                            methods.Add((m, alias));
+                            break;
+                        }
+                    }
+                }
             }
+            catch { /* 跳过无法反射的类型 */ }
         }
 
         if (methods.Count == 0 && types.Count == 0)
@@ -385,8 +393,16 @@ public class Cli
         var jsonPath = Path.Combine(targetDir, moduleName + ".json");
         File.WriteAllText(jsonPath, json);
 
-        Console.WriteLine($"已安装模块 '{moduleName}' 到 {tier} ({methods.Count} 个函数)");
+        Console.WriteLine($"已安装模块 '{moduleName}' 到 {tier} ({functions.Count} 个函数)");
         Console.WriteLine($"  定义文件: {jsonPath}");
+    }
+
+    private static string? GetNamedArg(System.Reflection.CustomAttributeData attr, string name)
+    {
+        foreach (var n in attr.NamedArguments)
+            if (n.MemberName == name)
+                return n.TypedValue.Value?.ToString();
+        return null;
     }
 
     private static string ToSnakeCase(string name) =>
