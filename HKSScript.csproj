@@ -9,6 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="HksFuncGenerator/**/*.cs" />
+  </ItemGroup>
+
+  <Target Name="BuildGenerator" BeforeTargets="CoreCompile">
+    <MSBuild Projects="HksFuncGenerator/HksFuncGenerator.csproj" Targets="Build" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <ItemGroup>
+    <Analyzer Include="HksFuncGenerator/bin/Debug/netstandard2.0/HksFuncGenerator.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageReference Include="NUnit" Version="4.6.1" />
