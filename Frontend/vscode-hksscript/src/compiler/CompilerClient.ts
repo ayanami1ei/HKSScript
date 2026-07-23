@@ -18,6 +18,10 @@ export class CompilerClient {
         return this.exec('diagnose', filePath);
     }
 
+    getCompletions(filePath: string): any[] | null {
+        return this.exec('complete', filePath);
+    }
+
     getCompilerPath(): string {
         return vscode.workspace.getConfiguration('hkscript').get<string>('compilerPath') || '';
     }

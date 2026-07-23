@@ -5,6 +5,7 @@ import { HoverProvider } from './providers/HoverProvider';
 import { InlayHintsProvider } from './providers/InlayHintsProvider';
 import { SignatureHelpProvider } from './providers/SignatureHelpProvider';
 import { RunCodeLensProvider, registerRunCommand } from './providers/CodeLensProvider';
+import { CompletionProvider } from './providers/CompletionProvider';
 
 let highlighter: SemanticHighlighter;
 let compiler: CompilerClient;
@@ -60,6 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.languages.registerHoverProvider({ scheme: 'file', pattern: '**/*.hks' }, new HoverProvider(compiler)),
         vscode.languages.registerSignatureHelpProvider({ pattern: '**/*.hks' }, new SignatureHelpProvider(compiler), '(', ','),
         vscode.languages.registerCodeLensProvider({ pattern: '**/*.hks' }, new RunCodeLensProvider(compiler)),
+        vscode.languages.registerCompletionItemProvider({ pattern: '**/*.hks' }, new CompletionProvider(compiler)),
     );
 
     registerRunCommand(context, compiler);

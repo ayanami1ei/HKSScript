@@ -17,6 +17,9 @@ class CompilerClient {
     runDiagnose(filePath) {
         return this.exec('diagnose', filePath);
     }
+    getCompletions(filePath) {
+        return this.exec('complete', filePath);
+    }
     getCompilerPath() {
         return vscode.workspace.getConfiguration('hkscript').get('compilerPath') || '';
     }

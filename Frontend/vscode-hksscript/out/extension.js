@@ -9,6 +9,7 @@ const HoverProvider_1 = require("./providers/HoverProvider");
 const InlayHintsProvider_1 = require("./providers/InlayHintsProvider");
 const SignatureHelpProvider_1 = require("./providers/SignatureHelpProvider");
 const CodeLensProvider_1 = require("./providers/CodeLensProvider");
+const CompletionProvider_1 = require("./providers/CompletionProvider");
 let highlighter;
 let compiler;
 let diagnostic;
@@ -50,7 +51,7 @@ function activate(context) {
             runDiagnose(ed.document.uri.fsPath);
     }));
     // Providers
-    context.subscriptions.push(vscode.languages.registerInlayHintsProvider({ pattern: '**/*.hks' }, new InlayHintsProvider_1.InlayHintsProvider(compiler)), vscode.languages.registerHoverProvider({ scheme: 'file', pattern: '**/*.hks' }, new HoverProvider_1.HoverProvider(compiler)), vscode.languages.registerSignatureHelpProvider({ pattern: '**/*.hks' }, new SignatureHelpProvider_1.SignatureHelpProvider(compiler), '(', ','), vscode.languages.registerCodeLensProvider({ pattern: '**/*.hks' }, new CodeLensProvider_1.RunCodeLensProvider(compiler)));
+    context.subscriptions.push(vscode.languages.registerInlayHintsProvider({ pattern: '**/*.hks' }, new InlayHintsProvider_1.InlayHintsProvider(compiler)), vscode.languages.registerHoverProvider({ scheme: 'file', pattern: '**/*.hks' }, new HoverProvider_1.HoverProvider(compiler)), vscode.languages.registerSignatureHelpProvider({ pattern: '**/*.hks' }, new SignatureHelpProvider_1.SignatureHelpProvider(compiler), '(', ','), vscode.languages.registerCodeLensProvider({ pattern: '**/*.hks' }, new CodeLensProvider_1.RunCodeLensProvider(compiler)), vscode.languages.registerCompletionItemProvider({ pattern: '**/*.hks' }, new CompletionProvider_1.CompletionProvider(compiler)));
     (0, CodeLensProvider_1.registerRunCommand)(context, compiler);
     // 初始加载
     setTimeout(() => {
