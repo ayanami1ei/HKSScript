@@ -59,15 +59,29 @@ tasks:
       - tar czf {{.RELEASE_ARCHIVE}} -C release hkscript_v0.2.0/
       - "echo release: {{.RELEASE_ARCHIVE}}"
 
-  wine-test:
-    desc: 用 wine 运行 Windows exe
+  wine-setup:
+    desc: 安装 Windows 版 HKSScript.exe 到 Wine 固定目录
+    deps: [build-win]
     cmds:
-      - wine explorer /desktop=hks,1280x720 /tmp/hks_win/HKSScript.exe {{.CLI_ARGS}}
+      - "mkdir -p {{.HOME}}/.hks"
+      - "cp /tmp/hks_win/HKSScript.exe {{.HOME}}/.hks/"
+      - "ln -sf {{.HOME}}/.hks/HKSScript.exe {{.HOME}}/.hks/hks.exe 2>/dev/null || true"
+      - "echo Wine HKSScript: {{.HOME}}/.hks/HKSScript.exe"
+
+  wine-run:
+    desc: 在 wine 中运行脚本 (需先 wine-setup)
+    cmds:
+      - wine {{.HOME}}/.hks/HKSScript.exe run {{.FILE}}
 
   wine-install:
     desc: 在 wine 中 install DLL
     cmds:
-      - wine explorer /desktop=hks,1280x720 /tmp/hks_win/HKSScript.exe install global {{.DLL}}
+      - wine {{.HOME}}/.hks/HKSScript.exe install global {{.DLL}}
+
+  wine-list:
+    desc: 在 wine 中列出已注册函数
+    cmds:
+      - wine {{.HOME}}/.hks/HKSScript.exe list
 
   clean:
     desc: 清空产物

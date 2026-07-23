@@ -42,12 +42,22 @@ release: build build-win build-linux build-nuget build-vsix
 	tar czf $(RELEASE_ARCHIVE) -C release hkscript_v0.2.0/
 	@echo "=== release: $(RELEASE_ARCHIVE) ==="
 
-# ─── Wine 测试 ───
-wine-test:
-	wine explorer /desktop=hks,1280x720 /tmp/hks_win/HKSScript.exe $(ARGS)
+# ─── Wine ───
+WINE_EXE:=$(HOME)/.hks/HKSScript.exe
+
+wine-setup: build-win
+	mkdir -p $(HOME)/.hks
+	cp -f /tmp/hks_win/HKSScript.exe $(WINE_EXE)
+	@echo "Wine HKSScript: $(WINE_EXE)"
+
+wine-run:
+	wine $(WINE_EXE) run $(FILE)
 
 wine-install:
-	wine explorer /desktop=hks,1280x720 /tmp/hks_win/HKSScript.exe install global $(DLL)
+	wine $(WINE_EXE) install global $(DLL)
+
+wine-list:
+	wine $(WINE_EXE) list
 
 # ─── 其它 ───
 clean:
