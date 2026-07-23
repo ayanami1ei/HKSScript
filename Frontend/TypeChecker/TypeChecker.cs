@@ -1,4 +1,5 @@
 using HksScript.Ast;
+using HksScript.Module;
 
 namespace HksScript.TypeChecker;
 
@@ -24,12 +25,14 @@ public class CheckResult
 
 public class TypeChecker
 {
-    private readonly SymbolTable symbols = new();
+    private readonly Module.SymbolTable symbols;
     private readonly CheckResult result = new();
-    private readonly Dictionary<string, List<FunctionSig>> functions = new();
 
-    public TypeChecker()
+    public TypeChecker() : this(new Module.SymbolTable()) { }
+
+    public TypeChecker(Module.SymbolTable? existing)
     {
+        symbols = existing ?? new Module.SymbolTable();
         RegisterBuiltins();
     }
 
@@ -41,21 +44,14 @@ public class TypeChecker
     }
 
     public string? ResolveType(string name)
-        => symbols.Resolve(name)?.Name;
+        => symbols.ResolveVariable(name)?.Name;
 
     public string? ResolveFuncType(string name)
-    {
-        if (functions.TryGetValue(name, out var sigs) && sigs.Count > 0)
-        {
-            var s = sigs[0];
-            return $"({string.Join(",", s.ParamTypes)})->{s.ReturnType}";
-        }
-        return null;
-    }
+        => symbols.ResolveFuncType(name);
 
     public void EnterScope() => symbols.EnterScope();
     public void ExitScope() => symbols.ExitScope();
-    public void DefineSymbol(string name, TypeRef type) => symbols.Define(name, type);
+    public void DefineSymbol(string name, TypeRef type) => symbols.DefineVariable(name, type);
 
     private static int Line(Expr? e) => e?.Position?.Line ?? -1;
     private static int Line(Stmt? s) => s?.Position?.Line ?? -1;
@@ -105,9 +101,7 @@ public class TypeChecker
 
     public void RegisterFunc(string name, string[] paramTypes, string returnType)
     {
-        if (!functions.ContainsKey(name))
-            functions[name] = new List<FunctionSig>();
-        functions[name].Add(new FunctionSig(name, paramTypes, returnType));
+        symbols.RegisterFunction(name, paramTypes, returnType);
     }
 
     private void VisitStmt(Stmt stmt)
@@ -129,7 +123,7 @@ public class TypeChecker
     {
         var type = InferExpr(assign.Value);
         if (type != null)
-            symbols.Define(assign.Name, type);
+            symbols.DefineVariable(assign.Name, type);
     }
 
     private void VisitFuncDef(FuncDef funcDef)
@@ -140,7 +134,7 @@ public class TypeChecker
 
         symbols.EnterScope();
         foreach (var param in funcDef.Params)
-            symbols.Define(param.Name, param.Type);
+            symbols.DefineVariable(param.Name, param.Type);
         foreach (var stmt in funcDef.Body)
             VisitStmt(stmt);
         symbols.ExitScope();
@@ -201,7 +195,7 @@ public class TypeChecker
 
     private TypeRef? InferVariable(Variable var)
     {
-        var resolved = symbols.Resolve(var.Name);
+        var resolved = symbols.ResolveVariable(var.Name);
         if (resolved == null)
             result.Error($"未定义的变量: {var.Name}", Line(var));
         return resolved;
@@ -209,27 +203,21 @@ public class TypeChecker
 
     private TypeRef? InferCall(Call call)
     {
-        if (!functions.TryGetValue(call.Name, out var sigs))
-        {
-            result.Error($"未定义的函数: {call.Name}", Line(call));
-            return null;
-        }
-
         var argTypes = call.Args.Select(a => InferExpr(a)).ToList();
         if (argTypes.Any(t => t == null)) return null;
-
         var argNames = argTypes.Select(t => t!.Name).ToArray();
 
-        var matched = sigs.FirstOrDefault(s =>
-            s.ParamTypes.Length == argNames.Length &&
-            s.ParamTypes.SequenceEqual(argNames));
-
+        var matched = symbols.FindFunction(call.Name, argNames);
         if (matched == null)
         {
-            var expected = sigs[0].ParamTypes.Length == argNames.Length
-                ? string.Join(", ", sigs[0].ParamTypes)
-                : $"{sigs[0].ParamTypes.Length}个参数";
-            result.Error($"函数 {call.Name} 参数不匹配: 需要 ({expected}), 实际 ({string.Join(", ", argNames)})", Line(call));
+            // 尝试获取第一个签名用于错误信息
+            var first = symbols.ResolveFuncType(call.Name);
+            if (first == null)
+            {
+                result.Error($"未定义的函数: {call.Name}", Line(call));
+                return null;
+            }
+            result.Error($"函数 {call.Name} 参数不匹配: 需要 {first}, 实际 ({string.Join(", ", argNames)})", Line(call));
             return null;
         }
 
@@ -284,28 +272,35 @@ public class TypeChecker
         if (pipe.Right is Call call)
         {
             var leftType = InferExpr(pipe.Left);
-            if (!functions.TryGetValue(call.Name, out var sigs))
+            var funcType = symbols.ResolveFuncType(call.Name);
+            if (funcType == null)
             {
                 result.Error($"未定义的函数: {call.Name}", Line(call));
                 return null;
             }
 
+            // 从类型字符串 "(int,int)->int" 提取参数列表
+            var paramMatch = System.Text.RegularExpressions.Regex.Match(funcType, @"\(([^)]*)\)");
+            var paramNames = paramMatch.Success
+                ? paramMatch.Groups[1].Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                : [];
+
             // 找第一个类型匹配的参数位置
             var leftTypeName = leftType?.Name ?? "?";
             int insertAt = -1;
-            for (int i = 0; i < sigs[0].ParamTypes.Length; i++)
+            for (int i = 0; i < paramNames.Length; i++)
             {
-                if (sigs[0].ParamTypes[i] == leftTypeName)
+                if (paramNames[i] == leftTypeName)
                 {
                     insertAt = i;
                     break;
                 }
             }
-            if (insertAt < 0) insertAt = 0; // fallback: 插第一个
+            if (insertAt < 0) insertAt = 0;
 
             // 构建完整参数列表
             var argTypes = new List<TypeRef?>();
-            for (int i = 0; i < sigs[0].ParamTypes.Length; i++)
+            for (int i = 0; i < paramNames.Length; i++)
             {
                 if (i == insertAt)
                     argTypes.Add(leftType);
@@ -318,13 +313,11 @@ public class TypeChecker
             pipe.PipeArgIndex = insertAt;
 
             var argNames = argTypes.Select(t => t?.Name ?? "?").ToArray();
-            var matched = sigs.FirstOrDefault(s =>
-                s.ParamTypes.Length == argNames.Length &&
-                s.ParamTypes.SequenceEqual(argNames));
+            var matched = symbols.FindFunction(call.Name, argNames);
 
             if (matched == null)
             {
-                result.Error($"pipe {call.Name} 参数不匹配: 需要 ({string.Join(", ", sigs[0].ParamTypes)}), 实际 ({string.Join(", ", argNames)})", Line(pipe));
+                result.Error($"pipe {call.Name} 参数不匹配: 需要 {funcType}, 实际 ({string.Join(", ", argNames)})", Line(pipe));
                 return null;
             }
 
