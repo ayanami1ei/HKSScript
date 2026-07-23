@@ -172,25 +172,56 @@ ModuleInit.RegisterAll(table);
                    └──────────┘    └────────────┘  └──────────┘
 ```
 
+#### 符号注册与延迟加载
+
+启动时只加载模块定义的**符号信息**（函数签名、类型名），不加载 DLL。真正的 DLL 加载推迟到 `import` 语句或实际调用时。
+
+**启动流程：**
+
+```
+1. 读取 hksconfig.json → 获取模块列表
+2. 扫描所有已安装模块的 JSON 定义
+3. 注册函数签名到 TypeChecker（类型推导用）
+4. DLL 不加载，FunctionTable 暂不注册
+```
+
+**import 时：**
+
+```
+1. 查找模块定义 JSON（已存在）
+2. 加载 DLL
+3. 注册函数到 FunctionTable
+```
+
+**install 命令：**
+
+```
+install <层级> <dll> → 
+  1. 扫描 DLL 中的 [HksFunc]
+  2. 生成模块定义 JSON 到对应层级目录
+  3. 更新 hksconfig.json（添加该模块到模块列表）
+  4. 如果 LibraryManager 已经在运行，重新加载配置
+```
+
 #### LibraryManager 接口
 
 ```csharp
 public class LibraryManager
 {
-    // 构造函数：从命令行选项或配置文件初始化
-    public LibraryManager(LibraryConfig config);
+    // 从配置文件初始化，启动时调用
+    public LibraryManager(string configPath);
 
-    // 扫描库路径，返回所有可用模块列表
-    public List<ModuleDef> ListModules();
+    // 重新加载配置（install 后调用）
+    public void Reload();
 
-    // 安装一个 DLL 到指定层级
+    // 获取所有已加载的模块名
+    public List<string> ListModules();
+
+    // 安装 DLL 到指定层级（修改配置文件 + 加载模块）
     public void InstallModule(string tier, string dllPath);
 
-    // 导入模块到指定的 FunctionTable
-    public void ImportModule(string moduleName, FunctionTable table);
-
-    // 批量导入所有已安装的模块
-    public void ImportAll(FunctionTable table);
+    // 注册所有已加载模块的函数到 FunctionTable
+    public void RegisterAll(FunctionTable table);
 
     // 获取模块定义（供代码生成器使用）
     public ModuleDef? GetModuleDef(string moduleName);
@@ -317,7 +348,8 @@ enhanced = enhance(img)            # 对应 [HksFunc(alias="enhance")] EdgeEnhan
 1. 加载指定的 .dll
 2. 扫描其中所有标记了 [HksFunc] 的 public static 方法
 3. 读取方法签名（名称、参数类型、返回类型）和 Alias
-4. 生成一个模块定义文件到对应库目录
+4. 生成模块定义 JSON 到对应库目录
+5. 更新 hksconfig.json
 ```
 
 模块定义文件格式（JSON）：
@@ -334,19 +366,25 @@ enhanced = enhance(img)            # 对应 [HksFunc(alias="enhance")] EdgeEnhan
 }
 ```
 
-#### 脚本中的 import 加载机制
+#### 启动加载
+
+外壳（CLI、语言服务器、REPL）启动时的标准流程：
+
+```csharp
+// 1. 读取配置，注册符号信息到类型系统
+var lib = new LibraryManager("hksconfig.json");
+lib.RegisterSymbols(typeChecker);  // 只加载函数签名，不加载 DLL
+
+// 2. 注册内置函数
+BuiltinRegistry.RegisterBuiltins(table);
+
+// 3. 开始处理请求
+// import 时由 LibraryManager 按需加载 DLL
+```
 
 ```python
-import find_circle    # 按 project → global → std 顺序查找 find_circle.json
-import my_algo        # 找到第一个即停止
-```
-
-import 执行时（`LibraryManager.ImportModule` 内部）：
-
-```
-1. 按 project → global → std 顺序查找 <name>.json
-2. 加载对应的 .dll（如果尚未加载）
-3. 注册模块定义文件中列出的所有函数到 FunctionTable
+import find_circle   # 此时加载 DLL，注册函数到 FunctionTable
+result = find_circles(img)  # 直接调用，DLL 已加载
 ```
 
 #### FunctionTable 对接
