@@ -111,7 +111,17 @@ public class Interpreter : HirRunner
         foreach (var mod in hir.Imported)
         {
             if (libManager != null)
-                libManager.Import(mod, funcTable);
+            {
+                try
+                {
+                    libManager.Import(mod, funcTable);
+                    Console.WriteLine($">>> loaded module: {mod}");
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"导入模块失败 '{mod}': {ex.Message}");
+                }
+            }
         }
     }
 }
