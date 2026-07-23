@@ -1,4 +1,5 @@
 using HksScript.Hir;
+using HksScript.Module;
 
 namespace HksScript.Interpreter;
 public class Interpreter : HirRunner
@@ -6,11 +7,13 @@ public class Interpreter : HirRunner
     private HirBasicNode[] nodes;
     private Dictionary<int, object?> varRegister = [];
     private FunctionTable funcTable;
+    private LibraryManager? libManager;
 
-    public Interpreter(HirBasicNode[] nodes, FunctionTable funcTable)
+    public Interpreter(HirBasicNode[] nodes, FunctionTable funcTable, LibraryManager? libManager = null)
     {
         this.nodes = nodes;
         this.funcTable = funcTable;
+        this.libManager = libManager;
     }
 
     // 供测试/外部取结果
@@ -106,6 +109,9 @@ public class Interpreter : HirRunner
     private void RunImport(Import hir)
     {
         foreach (var mod in hir.Imported)
-            funcTable.ImportModule(mod);
+        {
+            if (libManager != null)
+                libManager.Import(mod, funcTable);
+        }
     }
 }

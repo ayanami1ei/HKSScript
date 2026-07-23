@@ -3,6 +3,7 @@ using HksScript.Algorithms;
 using HksScript.Lexer;
 using HksScript.TypeChecker;
 using HksScript.Lowering;
+using HksScript.Module;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using System.Text.Json;
@@ -12,6 +13,7 @@ namespace HksScript.Cli;
 public class Cli
 {
     private FunctionTable funcTable = new();
+    private LibraryManager libManager = new();
 
     // ANSI 颜色
     const string Red    = "\u001b[31m";
@@ -23,6 +25,7 @@ public class Cli
 
     public Cli()
     {
+        libManager.ScanModules();
         BuiltinRegistry.RegisterBuiltins(funcTable);
         ModuleInit.RegisterAll(funcTable);
     }
@@ -80,6 +83,13 @@ public class Cli
 
     // ─── check 命令 ───
 
+    private TypeChecker.TypeChecker MakeChecker()
+    {
+        var c = new TypeChecker.TypeChecker();
+        libManager.RegisterSymbols(c);
+        return c;
+    }
+
     private void CheckFile(string path)
     {
         var code = File.ReadAllText(path);
@@ -87,7 +97,7 @@ public class Cli
         var (ast, tree) = BuildAst(path);
         if (ast == null) return;
 
-        var checker = new TypeChecker.TypeChecker();
+        var checker = MakeChecker();
         var result = checker.Check(ast);
 
         if (!result.HasErrors)
@@ -150,7 +160,7 @@ public class Cli
 
         if (ast != null)
         {
-            var checker = new TypeChecker.TypeChecker();
+        var checker = MakeChecker();
             var result = checker.Check(ast);
 
             // 遍历 ANTLR 树，收集所有标识符的位置
@@ -214,7 +224,7 @@ public class Cli
         var (ast, _) = BuildAst(path);
         if (ast == null) return;
 
-        var checker = new TypeChecker.TypeChecker();
+        var checker = MakeChecker();
         var result = checker.Check(ast);
 
         if (result.HasErrors)
@@ -228,7 +238,7 @@ public class Cli
         var lowerer = new LoweringPass(funcTable);
         var hir = lowerer.Lower(ast);
 
-        var vm = new HksScript.Interpreter.Interpreter(hir, funcTable);
+        var vm = new HksScript.Interpreter.Interpreter(hir, funcTable, libManager);
         vm.Run();
 
         Console.WriteLine($"{Green}执行完成{Reset}");
@@ -241,7 +251,7 @@ public class Cli
         var (ast, tree) = BuildAst(path);
         if (ast == null) return;
 
-        var checker = new TypeChecker.TypeChecker();
+        var checker = MakeChecker();
         checker.Check(ast);
 
         // 在 ANTLR 树中查找指定位置的标识符
