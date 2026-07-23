@@ -379,22 +379,6 @@ var def = lib.GetModuleDef("my_algo");
 // def.Functions → 生成 C++ 函数声明
 // def.Assembly  → 引用原 DLL
 ```
-        var asm = Assembly.LoadFrom(def.Assembly);
-        foreach (var fn in def.Functions)
-        {
-            var method = asm.GetType(fn.Method.Split('.')[0])
-                ?.GetMethod(fn.Method.Split('.')[1]);
-            if (method == null) continue;
-
-            var func = new ExternalFunction(fn.ScriptName, args => {
-                var typedArgs = args.Select((a, i) => ConvertArg(a, fn.Params[i])).ToArray();
-                return method.Invoke(null, typedArgs);
-            });
-            Register(fn.ScriptName, func);
-        }
-    }
-}
-```
 
 这样 `[HksFunc]` 标记的方法只需要编译一次，之后通过 `dotnet HKSScript.dll install <层级> <dll路径>` 注册，脚本里 `import 模块名` 即可使用。不需要重新编译脚本引擎。
 
@@ -483,12 +467,7 @@ HksScript/
 | `HksFuncGenerator` | 源生成器 | Roslyn 分析器，编译时生成 `HksFuncRegistry.RegisterAll`。 |
 | `vscode-hksscript` | VS Code 扩展 | 通过 `HksScript.LanguageServer` 获取符号、诊断、提示。 |
 
-### 为什么这样拆分
-
-1. **内核不依赖外壳** — Kernel 不知道 CLI、语言服务器或 VS Code 的存在，只暴露 API
-2. **外壳可以换** — 未来可以加 REPL、Web API、GUI 等，都只需引用 Kernel
-3. **语言服务器直调 Kernel** — 不需要再 spawn `dotnet run`，直接进程内调用，性能好
-4. **代码生成器也走 LibraryManager** — C++ 代码生成器调 `GetModuleDef()` 拿函数签名，不需要跑解释器
+### HksScript.Sdk NuGet 包
 
 用户在自己的项目中引用此包即可使用 `[HksFunc]` 和 `[HksType]`：
 
@@ -522,6 +501,13 @@ public class MyAlgo
 | `HksScript.Sdk.props` | MSBuild 属性，自动引用源生成器 |
 
 引擎自身的 `BasicAlgo.cs` 也通过引用 `HksScript.Sdk` 来使用标签，和第三方用户无区别。
+
+### 为什么这样拆分
+
+1. **内核不依赖外壳** — Kernel 不知道 CLI、语言服务器或 VS Code 的存在，只暴露 API
+2. **外壳可以换** — 未来可以加 REPL、Web API、GUI 等，都只需引用 Kernel
+3. **语言服务器直调 Kernel** — 不需要再 spawn `dotnet run`，直接进程内调用，性能好
+4. **代码生成器也走 LibraryManager** — C++ 代码生成器调 `GetModuleDef()` 拿函数签名，不需要跑解释器
 
 ## 注意事项
 
