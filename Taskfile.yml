@@ -60,28 +60,50 @@ tasks:
       - "echo release: {{.RELEASE_ARCHIVE}}"
 
   wine-setup:
-    desc: 安装 Windows 版 HKSScript.exe 到 Wine 固定目录
+    desc: 安装 Windows 版 HKSScript 到 Wine 固定目录
     deps: [build-win]
     cmds:
       - "mkdir -p {{.HOME}}/.hks"
       - "cp /tmp/hks_win/HKSScript.exe {{.HOME}}/.hks/"
+      - "cp bin/{{.CONFIG}}/net10.0/HksScript.Sdk.dll {{.HOME}}/.hks/ 2>/dev/null || true"
       - "ln -sf {{.HOME}}/.hks/HKSScript.exe {{.HOME}}/.hks/hks.exe 2>/dev/null || true"
       - "echo Wine HKSScript: {{.HOME}}/.hks/HKSScript.exe"
 
   wine-run:
     desc: 在 wine 中运行脚本 (需先 wine-setup)
     cmds:
-      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe run '{{.FILE}}' 2>/dev/null"
+      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe run '{{.FILE}}'"
+
+  wine-build:
+    desc: 在 Linux 上编译 Windows .csproj (native dotnet)
+    cmds:
+      - "dotnet build '{{.CSPROJ}}' -c Release 2>&1 | tail -5"
 
   wine-install:
     desc: 在 wine 中 install DLL
     cmds:
-      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe install global '{{.DLL}}' 2>/dev/null"
+      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe install global '{{.DLL}}'"
+
+  wine-deploy:
+    desc: 编译 + install + 复制原生 DLL (一站完成)
+    deps: [wine-build]
+    cmds:
+      - task: wine-install
+      - "cp $(dirname '{{.DLL}}')/*.dll {{.HOME}}/.hks/lib/ 2>/dev/null || true"
+      - "echo === 部署完成: wine-run FILE=脚本.hks ==="
+
+  wine-build-install:
+    desc: 编译 + install Windows 项目
+    cmds:
+      - task: wine-build
+      - task: wine-install
+        vars:
+          DLL: "{{.DLL}}"
 
   wine-list:
     desc: 在 wine 中列出已注册函数
     cmds:
-      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe list 2>/dev/null"
+      - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe list"
 
   clean:
     desc: 清空产物
