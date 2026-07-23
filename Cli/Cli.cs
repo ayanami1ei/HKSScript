@@ -7,6 +7,7 @@ using HksScript.Module;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using System.Text.Json;
+using System.Reflection;
 
 namespace HksScript.Cli;
 
@@ -50,6 +51,12 @@ public class Cli
                     HintFile(args[1], int.Parse(args[2]), int.Parse(args[3]));
                 else
                     Console.Error.WriteLine("用法: hint <文件> <行号> <列号>");
+                break;
+            case "install":
+                if (args.Length >= 3)
+                    InstallModule(args[1], args[2]);
+                else
+                    Console.Error.WriteLine("用法: install <std|global|project> <dll路径>");
                 break;
             default:              PrintHelp();           break;
         }
@@ -246,6 +253,84 @@ public class Cli
 
         Console.WriteLine($"{Green}执行完成{Reset}");
     }
+
+    // ─── install 命令 ───
+
+    private void InstallModule(string tier, string dllPath)
+    {
+        if (!File.Exists(dllPath))
+        {
+            Console.Error.WriteLine($"文件不存在: {dllPath}");
+            return;
+        }
+
+        // 确定目标目录
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var targetDir = (tier.ToLower()) switch
+        {
+            "std"     => Path.GetFullPath("./lib/std/"),
+            "global"  => Path.GetFullPath(Path.Combine(home, ".hks", "lib")),
+            "project" => Path.GetFullPath("./lib/"),
+            _ => throw new Exception($"未知层级: {tier}，可用: std, global, project")
+        };
+        Directory.CreateDirectory(targetDir);
+
+        // 加载 DLL，扫描 [HksFunc]
+        var asm = Assembly.LoadFrom(dllPath);
+        var methods = asm.GetTypes()
+            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            .Where(m => m.GetCustomAttribute<HksFuncAttribute>() != null)
+            .ToList();
+
+        if (methods.Count == 0)
+        {
+            Console.Error.WriteLine($"DLL 中未找到标记了 [HksFunc] 的方法");
+            return;
+        }
+
+        var moduleName = Path.GetFileNameWithoutExtension(dllPath).ToLower()
+            .Replace(".", "_").Replace(" ", "_");
+        var functions = new List<object>();
+
+        foreach (var m in methods)
+        {
+            var attr = m.GetCustomAttribute<HksFuncAttribute>()!;
+            var scriptName = attr.Alias ?? ToSnakeCase(m.Name);
+            var paramTypes = m.GetParameters().Select(p => p.ParameterType.Name switch
+            {
+                "Int32" => "int",
+                "Double" or "Single" => "float",
+                "String" => "string",
+                "Boolean" => "bool",
+                _ when p.ParameterType.Name.Contains("List") => "Set<" + p.ParameterType.GetGenericArguments()[0].Name + ">",
+                _ => p.ParameterType.Name
+            }).ToArray();
+            var returnType = m.ReturnType.Name switch
+            {
+                "Int32" => "int",
+                "Double" or "Single" => "float",
+                "String" => "string",
+                "Boolean" => "bool",
+                "Void" => "void",
+                _ when m.ReturnType.Name.Contains("List") => "Set<" + m.ReturnType.GetGenericArguments()[0].Name + ">",
+                _ => m.ReturnType.Name
+            };
+
+            functions.Add(new { scriptName, method = $"{m.DeclaringType!.FullName}.{m.Name}", paramTypes, returns = returnType });
+        }
+
+        // 生成模块定义 JSON
+        var def = new { module = moduleName, assembly = Path.GetFullPath(dllPath), functions };
+        var json = JsonSerializer.Serialize(def, new JsonSerializerOptions { WriteIndented = true });
+        var jsonPath = Path.Combine(targetDir, moduleName + ".json");
+        File.WriteAllText(jsonPath, json);
+
+        Console.WriteLine($"已安装模块 '{moduleName}' 到 {tier} ({methods.Count} 个函数)");
+        Console.WriteLine($"  定义文件: {jsonPath}");
+    }
+
+    private static string ToSnakeCase(string name) =>
+        string.Concat(name.Select((c, i) => i > 0 && char.IsUpper(c) ? "_" + c.ToString() : c.ToString())).ToLower();
 
     // ─── hint 命令 ───
 
