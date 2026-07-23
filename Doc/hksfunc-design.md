@@ -401,25 +401,94 @@ var def = lib.GetModuleDef("my_algo");
 ## 项目结构
 
 ```
-HKSScript/
-├── HksScript.Sdk/                     ← NuGet 库（用户引用即可使用标签）
+HksScript/
+├── HksScript.Kernel/                   ← 内核库（被所有外壳引用）
+│   ├── HksScript.Kernel.csproj
+│   ├── Frontend/                       ← 词法/语法/类型推导/Lowering
+│   ├── Backend/
+│   │   ├── Interpreter/               ← HIR 解释器
+│   │   ├── CodeGen/                   ← C++/C# 代码生成
+│   │   └── Runtime/                   ← Pack<T>, ScriptSet, FunctionTable
+│   └── LibraryManager/               ← 库加载模块（独立于外壳）
+│       ├── LibraryManager.cs
+│       └── LibraryConfig.cs
+├── HksScript.Cli/                      ← CLI 外壳（引用 Kernel）
+│   ├── HksScript.Cli.csproj
+│   ├── Cli.cs                          ← 命令行解析，调 Kernel API
+│   ├── BuiltinRegistry.cs             ← 内置函数注册
+│   └── ModuleInit.cs                  ← OpenCV 算法注册
+├── HksScript.LanguageServer/           ← 语言服务器（引用 Kernel）
+│   ├── HksScript.LanguageServer.csproj
+│   └── Server.cs                       ← stdin/stdout JSON 协议
+├── HksScript.Sdk/                      ← NuGet 包（用户引用）
 │   ├── HksScript.Sdk.csproj
-│   ├── HksFuncAttribute.cs           ← [HksFunc] 和 [HksType] 定义
-│   └── HksFuncRegistry.cs           ← partial class 声明
-├── HksFuncGenerator/                  ← 源生成器项目
+│   ├── HksFuncAttribute.cs
+│   └── HksFuncRegistry.cs
+├── HksFuncGenerator/                   ← 源生成器
 │   ├── HksFuncGenerator.csproj
-│   ├── HksFuncGenerator.cs            ← ISourceGenerator 实现
-│   └── HksFuncRegistry.sig            ← 生成器输出模板
-├── Shared/
-│   └── (旧特性定义，迁移到 HksScript.Sdk 后删除)
-├── Backend/Module/Algorithm/
-│   ├── BasicAlgo.cs                   ← 现有的算法类，加上 [HksFunc]
-│   └── ModuleInit.cs                  ← 改为调用生成的 RegisterAll
-└── Cli/
-    └── Cli.cs                         ← 启动时调 HksFuncRegistry.RegisterAll
+│   └── HksFuncGenerator.cs
+└── vscode-hksscript/                   ← VS Code 扩展（通过语言服务器通信）
 ```
 
-### HksScript.Sdk NuGet 包
+### 架构与数据流
+
+```
+                    ┌─────────────────────────┐
+                    │   VS Code 扩展           │
+                    │   (vscode-hksscript)    │
+                    └────────┬───────────────┘
+                             │ JSON 协议 (stdin/stdout)
+                             ▼
+                    ┌─────────────────────────┐
+                    │  HksScript.LanguageServer│
+                    │  (引用 Kernel)           │
+                    └────────┬───────────────┘
+                             │ 直接 API 调用
+                             ▼
+┌────────────┐     ┌─────────────────────────┐
+│ HksScript  │     │  HksScript.Kernel       │
+│ .Cli       │────→│  ┌───────────────────┐  │
+│ (外壳)     │     │  │ Frontend          │  │
+└────────────┘     │  │ · Lexer/Parser    │  │
+                   │  │ · TypeChecker     │  │
+                   │  │ · Lowering        │  │
+                   │  ├───────────────────┤  │
+                   │  │ Backend           │  │
+                   │  │ · Interpreter     │  │
+                   │  │ · CodeGen (C++/#) │  │
+                   │  │ · FunctionTable   │  │
+                   │  ├───────────────────┤  │
+                   │  │ LibraryManager    │  │
+                   │  │ · 库加载/缓存     │  │
+                   │  └───────────────────┘  │
+                   └─────────────────────────┘
+                            │
+               ┌────────────┴────────────┐
+               ▼                         ▼
+       ┌──────────────┐          ┌──────────────┐
+       │ 库 JSON 定义  │          │ C++ 编译器    │
+       │ (std/global/  │          │ (代码生成产物) │
+       │  project)     │          └──────────────┘
+       └──────────────┘
+```
+
+### 各项目职责
+
+| 项目 | 类型 | 职责 |
+|------|------|------|
+| `HksScript.Kernel` | 类库 | 编译前端、解释器、代码生成、库管理。无入口点，纯 API。 |
+| `HksScript.Cli` | 可执行文件 | 命令行外壳：`check`/`run`/`diagnose`/`install`/`code-present`/`hint`。引用 Kernel。 |
+| `HksScript.LanguageServer` | 可执行文件 | stdin/stdout JSON 协议，供 VS Code 扩展通信。引用 Kernel。 |
+| `HksScript.Sdk` | NuGet 包 | `[HksFunc]` / `[HksType]` 特性定义，用户引用。 |
+| `HksFuncGenerator` | 源生成器 | Roslyn 分析器，编译时生成 `HksFuncRegistry.RegisterAll`。 |
+| `vscode-hksscript` | VS Code 扩展 | 通过 `HksScript.LanguageServer` 获取符号、诊断、提示。 |
+
+### 为什么这样拆分
+
+1. **内核不依赖外壳** — Kernel 不知道 CLI、语言服务器或 VS Code 的存在，只暴露 API
+2. **外壳可以换** — 未来可以加 REPL、Web API、GUI 等，都只需引用 Kernel
+3. **语言服务器直调 Kernel** — 不需要再 spawn `dotnet run`，直接进程内调用，性能好
+4. **代码生成器也走 LibraryManager** — C++ 代码生成器调 `GetModuleDef()` 拿函数签名，不需要跑解释器
 
 用户在自己的项目中引用此包即可使用 `[HksFunc]` 和 `[HksType]`：
 
