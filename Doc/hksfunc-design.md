@@ -226,7 +226,7 @@ public class LibraryConfig
 | 用户全局库 (global) | `~/.hks/lib/` | 用户自己编写或安装的通用算法库，所有项目可用 | 用户 |
 | 项目库 (project) | `<project>/lib/` | 只在当前项目里有意义的函数 | 项目开发者 |
 
-查找顺序：std → global → project，同名时 project 覆盖 global 覆盖 std。
+查找顺序：project → global → std，按此顺序返回第一个匹配的模块。
 
 #### 库路径（跨平台）
 
@@ -337,18 +337,16 @@ enhanced = enhance(img)            # 对应 [HksFunc(alias="enhance")] EdgeEnhan
 #### 脚本中的 import 加载机制
 
 ```python
-import std_algo        # 从 std 库查找 std_algo.json
-import my_global_lib   # 从 global 库查找 my_global_lib.json
-import project_specific # 从 project 库查找 project_specific.json
+import find_circle    # 按 project → global → std 顺序查找 find_circle.json
+import my_algo        # 找到第一个即停止
 ```
 
 import 执行时（`LibraryManager.ImportModule` 内部）：
 
 ```
-1. 在三个库目录中按 std → global → project 顺序查找 <name>.json
+1. 按 project → global → std 顺序查找 <name>.json
 2. 加载对应的 .dll（如果尚未加载）
 3. 注册模块定义文件中列出的所有函数到 FunctionTable
-4. 如果同名函数已存在，按优先级覆盖（project > global > std）
 ```
 
 #### FunctionTable 对接
