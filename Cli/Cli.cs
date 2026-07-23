@@ -58,6 +58,12 @@ public class Cli
                 else
                     Console.Error.WriteLine("用法: install <std|global|project> <dll路径>");
                 break;
+            case "delete":
+                if (args.Length >= 3)
+                    DeleteModule(args[1], args[2]);
+                else
+                    Console.Error.WriteLine("用法: delete <std|global|project> <模块名>");
+                break;
             default:              PrintHelp();           break;
         }
     }
@@ -265,7 +271,7 @@ public class Cli
         }
 
         // 确定目标目录
-        var exeDir = AppContext.BaseDirectory;
+        var exeDir = AppContext.BaseDirectory ?? ".";
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var targetDir = (tier.ToLower()) switch
         {
@@ -277,7 +283,7 @@ public class Cli
         Directory.CreateDirectory(targetDir);
 
         // 处理 HksScript.Sdk 依赖 — 在加载用户 DLL 前注册
-        var cliDir = AppContext.BaseDirectory;
+        var cliDir = AppContext.BaseDirectory ?? ".";
         AppDomain.CurrentDomain.AssemblyResolve += (_, args) =>
         {
             var name = new System.Reflection.AssemblyName(args.Name).Name;
@@ -302,7 +308,17 @@ public class Cli
         var methods = new List<(System.Reflection.MethodInfo Method, string? Alias)>();
         var types = new List<(System.Type Type, string? Alias)>();
 
-        foreach (var t in asm.GetTypes())
+        System.Type[] allTypes;
+        try
+        {
+            allTypes = asm.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            allTypes = ex.Types.Where(t => t != null).Cast<System.Type>().ToArray();
+        }
+
+        foreach (var t in allTypes)
         {
             try
             {
@@ -396,6 +412,26 @@ public class Cli
 
         Console.WriteLine($"已安装模块 '{moduleName}' 到 {tier} ({functions.Count} 个函数)");
         Console.WriteLine($"  定义文件: {jsonPath}");
+    }
+
+    private void DeleteModule(string tier, string moduleName)
+    {
+        var exeDir = AppContext.BaseDirectory ?? ".";
+        var targetDir = (tier.ToLower()) switch
+        {
+            "std"     => Path.Combine(exeDir, "lib", "std"),
+            "global"  => Path.Combine(exeDir, "lib"),
+            "project" => Path.GetFullPath("./lib/"),
+            _ => throw new Exception($"未知层级: {tier}，可用: std, global, project")
+        };
+        var jsonPath = Path.Combine(targetDir, moduleName + ".json");
+        if (!File.Exists(jsonPath))
+        {
+            Console.Error.WriteLine($"模块 '{moduleName}' 不存在于 {tier}");
+            return;
+        }
+        File.Delete(jsonPath);
+        Console.WriteLine($"已删除模块 '{moduleName}' 从 {tier}");
     }
 
     private static string? GetNamedArg(System.Reflection.CustomAttributeData attr, string name)

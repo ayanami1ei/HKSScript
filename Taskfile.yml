@@ -4,6 +4,10 @@ vars:
   RELEASE_DIR: release/hkscript_v0.2.0
   RELEASE_ARCHIVE: release/hkscript_v0.2.0.tar.gz
   CONFIG: Release
+  ZSVISION: /run/media/ayanami/本地磁盘/softsrc/_ZSVision定位库_X64最新版——20250217更新不分横竖线的角度问题函数——不带AVX的(2)
+  ZSVISION_SRC: /tmp/hkscore_build
+  ZSVISION_CSPROJ: '{{.ZSVISION_SRC}}/HKSCore.ZSVision.csproj'
+  ZSVISION_DLL: '{{.ZSVISION_SRC}}/bin/Release/net8.0-windows/HKSCore.dll'
 
 tasks:
   default:
@@ -77,7 +81,7 @@ tasks:
   wine-build:
     desc: 在 Linux 上编译 Windows .csproj (native dotnet)
     cmds:
-      - "dotnet build '{{.CSPROJ}}' -c Release 2>&1 | tail -5"
+      - "dotnet build '{{.CSPROJ}}' -c Release -p:EnableWindowsTargeting=true 2>&1 | tail -5"
 
   wine-install:
     desc: 在 wine 中 install DLL
@@ -91,6 +95,17 @@ tasks:
       - task: wine-install
       - "cp $(dirname '{{.DLL}}')/*.dll {{.HOME}}/.hks/lib/ 2>/dev/null || true"
       - "echo === 部署完成: wine-run FILE=脚本.hks ==="
+
+  deploy-zsvision:
+    desc: 编译 + install ZSVision 算法库
+    cmds:
+      - "cp -rf '{{.ZSVISION}}/.' '{{.ZSVISION_SRC}}/' && rm -rf '{{.ZSVISION_SRC}}/bin' '{{.ZSVISION_SRC}}/obj' '{{.ZSVISION_SRC}}/nuget.config' 2>/dev/null; true"
+      - task: wine-build
+        vars: {CSPROJ: '{{.ZSVISION_CSPROJ}}'}
+      - task: wine-install
+        vars: {DLL: '{{.ZSVISION_DLL}}'}
+      - "cp '{{.ZSVISION}}/bin/Release/net8.0-windows/'*.dll {{.HOME}}/.hks/lib/ 2>/dev/null || true"
+      - "echo === ZSVision 部署完成 ==="
 
   wine-build-install:
     desc: 编译 + install Windows 项目

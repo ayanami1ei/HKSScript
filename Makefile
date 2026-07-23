@@ -48,6 +48,7 @@ WINE_EXE:=$(HOME)/.hks/HKSScript.exe
 wine-setup: build-win
 	mkdir -p $(HOME)/.hks
 	cp -f /tmp/hks_win/HKSScript.exe $(WINE_EXE)
+	cp -f bin/$(CONFIG)/net10.0/HksScript.Sdk.dll $(HOME)/.hks/ 2>/dev/null || true
 	@echo "Wine HKSScript: $(WINE_EXE)"
 
 wine-run:
