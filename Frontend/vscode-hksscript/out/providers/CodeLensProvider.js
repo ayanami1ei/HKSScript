@@ -27,13 +27,11 @@ function registerRunCommand(context, compiler) {
         const term = vscode.window.createTerminal('HKS Script');
         term.show();
         if (compilerPath) {
-            if (compilerPath.endsWith('.dll'))
-                term.sendText(`dotnet exec "${compilerPath}" run "${target}"`);
-            else
-                term.sendText(`"${compilerPath}" run "${target}"`);
+            const exe = compilerPath.endsWith('.dll') ? `dotnet exec "${compilerPath}"` : `"${compilerPath}"`;
+            term.sendText(`${exe} run "${target}"`);
         }
         else {
-            term.sendText(`dotnet run -- run "${target}"`);
+            term.sendText(`hks run "${target}"`);
         }
     }));
 }

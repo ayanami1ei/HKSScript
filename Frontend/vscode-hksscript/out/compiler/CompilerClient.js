@@ -23,29 +23,36 @@ class CompilerClient {
     getCompilerPath() {
         return vscode.workspace.getConfiguration('hkscript').get('compilerPath') || '';
     }
+    resolveCompiler(compilerPath) {
+        if (!compilerPath)
+            return '';
+        // .dll 时优先找同目录下的原生可执行文件
+        if (compilerPath.endsWith('.dll')) {
+            const dir = path.dirname(compilerPath);
+            const base = path.basename(compilerPath, '.dll');
+            // Windows: .exe, Linux/macOS: 无扩展名
+            for (const exe of [base + '.exe', base, base + '.cmd', base + '.bat']) {
+                const full = path.join(dir, exe);
+                if (require('fs').existsSync(full))
+                    return full;
+            }
+        }
+        return compilerPath;
+    }
     exec(subCmd, filePath, ...rest) {
         try {
-            const compilerPath = this.getCompilerPath();
+            const rawPath = this.getCompilerPath();
             const opts = { timeout: 15000, encoding: 'utf-8' };
-            let cmd = 'dotnet';
+            let cmd;
             let args;
-            if (compilerPath) {
-                if (compilerPath.endsWith('.dll'))
-                    args = ['exec', compilerPath, subCmd, filePath, ...rest];
-                else
-                    args = [subCmd, filePath, ...rest];
+            if (rawPath) {
+                cmd = this.resolveCompiler(rawPath);
+                args = [subCmd, filePath, ...rest];
             }
             else {
-                const root = this.findProjectRoot(filePath);
-                if (root) {
-                    args = ['run', '--', subCmd, filePath, ...rest];
-                    opts.cwd = root;
-                }
-                else {
-                    // 尝试 PATH 中的 hks 命令
-                    cmd = 'hks';
-                    args = [subCmd, filePath, ...rest];
-                }
+                // 尝试 PATH 中的 hks 命令
+                cmd = 'hks';
+                args = [subCmd, filePath, ...rest];
             }
             const result = cp.spawnSync(cmd, args, opts);
             if (result.status !== 0)
