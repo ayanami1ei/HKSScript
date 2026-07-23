@@ -73,6 +73,7 @@ tasks:
       - "mkdir -p {{.HOME}}/.hks"
       - "cp /tmp/hks_win/HKSScript.exe {{.HOME}}/.hks/"
       - "cp bin/{{.CONFIG}}/net10.0/HksScript.Sdk.dll {{.HOME}}/.hks/ 2>/dev/null || true"
+      - "cp '{{.ZSVISION}}/ReferlibraryDll/HKSDll/'*.dll {{.HOME}}/.wine/drive_c/windows/system32/ 2>/dev/null || true"
       - "echo Wine HKSScript: {{.HOME}}/.hks/HKSScript.exe"
 
   wine-run:
@@ -102,7 +103,8 @@ tasks:
       - "cp -rf '{{.ZSVISION}}/.' '{{.ZSVISION_SRC}}/' && rm -rf '{{.ZSVISION_SRC}}/bin' '{{.ZSVISION_SRC}}/obj' '{{.ZSVISION_SRC}}/nuget.config' 2>/dev/null; true"
       - "dotnet build '{{.ZSVISION_CSPROJ}}' -c Release -p:EnableWindowsTargeting=true 2>&1 | tail -5"
       - "WINEDEBUG=-all wine {{.HOME}}/.hks/HKSScript.exe install global '{{.ZSVISION_DLL}}'"
-      - "cp '{{.ZSVISION}}/bin/Release/net8.0-windows/'*.dll {{.HOME}}/.hks/lib/ 2>/dev/null || true"
+      - "cp '{{.ZSVISION}}/'*.dll '{{.ZSVISION_SRC}}/bin/Release/net8.0-windows/' 2>/dev/null || true"
+      - "cp '{{.ZSVISION_SRC}}/bin/Release/net8.0-windows/'*.dll {{.HOME}}/.hks/ 2>/dev/null || true"
       - "echo === ZSVision 部署完成 ==="
 
   # ─── 快捷命令 (native) ───
