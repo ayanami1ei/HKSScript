@@ -14,6 +14,11 @@ public class Cli
 {
     private FunctionTable funcTable = new();
     private LibraryManager libManager = new();
+    private Module.SymbolTable? _symbols;
+
+    // 共享符号表，供代码生成等使用
+    public Module.SymbolTable Symbols =>
+        _symbols ??= libManager.RegisterSymbols();
 
     // ANSI 颜色
     const string Red    = "\u001b[31m";
@@ -85,9 +90,7 @@ public class Cli
 
     private TypeChecker.TypeChecker MakeChecker()
     {
-        var c = new TypeChecker.TypeChecker();
-        libManager.RegisterSymbols(c);
-        return c;
+        return new TypeChecker.TypeChecker(libManager.RegisterSymbols());
     }
 
     private void CheckFile(string path)

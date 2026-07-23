@@ -28,6 +28,9 @@ public class LibraryManager
     private readonly LibraryConfig _config;
     private readonly Dictionary<string, ModuleDefinition> _modules = new();
     private readonly Dictionary<string, Assembly> _loaded = new();
+    private SymbolTable? _symbols;
+
+    public SymbolTable? Symbols => _symbols;
 
     public LibraryManager(LibraryConfig? config = null)
     {
@@ -54,12 +57,22 @@ public class LibraryManager
         }
     }
 
-    // 注册所有模块的函数签名到 TypeChecker
-    public void RegisterSymbols(TypeChecker.TypeChecker checker)
+    // 注册所有模块的函数签名到共享符号表
+    public SymbolTable RegisterSymbols()
     {
+        if (_symbols != null) return _symbols;
+        _symbols = new SymbolTable();
         foreach (var def in _modules.Values)
             foreach (var fn in def.Functions)
-                checker.RegisterFunc(fn.ScriptName, fn.Params, fn.Returns);
+                _symbols.RegisterFunction(fn.ScriptName, fn.Params, fn.Returns);
+        return _symbols;
+    }
+
+    // 也注册到指定的 TypeChecker（兼容旧方式）
+    public void RegisterSymbols(TypeChecker.TypeChecker checker)
+    {
+        var syms = RegisterSymbols();
+        // 已经直接注册到 _symbols 了，不需要额外操作
     }
 
     // 导入模块：加载 DLL，注册函数到 FunctionTable
